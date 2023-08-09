@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Cliente {
+    private static final long COOLDOWN = 3000; // 3 segundos de cooldown para evitar spam
+
     public static void main(String[] args) {
         try {
             Socket socket = new Socket("172.16.255.221", 6969);
@@ -12,12 +14,16 @@ public class Cliente {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 
-// Hilo para leer mensajes del servidor
+// pide nombre de usuario
+            String nombreUsuario = in.readLine();
+            System.out.println(nombreUsuario);
+
+// Hilo leer mensajes
             Thread recibirMensajes = new Thread(() -> {
                 try {
                     String mensaje;
                     while ((mensaje = in.readLine()) != null) {
-                        System.out.println("Mensaje recibido: " + mensaje);
+                        System.out.println(mensaje);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -25,17 +31,29 @@ public class Cliente {
             });
             recibirMensajes.start();
 
-// Hilo principal para enviar mensajes al servidor
-            String userInput;
-            while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput);
-            }
+// Hilo enviar mensajes
+            Thread enviarMensajes = new Thread(() -> {
+                try {
+                    String userInput;
+                    while ((userInput = stdIn.readLine()) != null) {
+                        out.println(userInput);
+                        Thread.sleep(COOLDOWN); // Pausar el hilo durante el cooldown para que no spameen mensajes
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            enviarMensajes.start();
+
+// espera a que los hilos terminen para terminar los recursos usados
+            recibirMensajes.join();
+            enviarMensajes.join();
 
             out.close();
             in.close();
             stdIn.close();
             socket.close();
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
