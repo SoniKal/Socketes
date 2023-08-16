@@ -24,7 +24,7 @@ public class Cliente {
                 try {
                     String mensaje;
                     while ((mensaje = lector.readLine()) != null) {
-                        System.out.println("Mensaje del servidor: " + mensaje);
+                        System.out.println(mensaje); // Mostrar el mensaje directamente
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -37,7 +37,8 @@ public class Cliente {
                 try {
                     String mensajeUsuario;
                     while ((mensajeUsuario = lectorConsola.readLine()) != null) {
-                        escritor.println(mensajeUsuario);
+                        // Agregar el nombre de usuario al mensaje antes de enviarlo
+                        escritor.println("[" + nombreUsuario + "]: " + mensajeUsuario);
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES); // Esperar para evitar enviar mensajes muy rápido
                     }
                 } catch (IOException | InterruptedException e) {
