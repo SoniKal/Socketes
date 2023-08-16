@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Servidor {
-    private ServerSocket ServerSockete;
-    private static List<ClienteHandler> clientes;
+    private ServerSocket servidorSocket;
+    private static List<ClienteHandler> listaClientes;
 
     public static void main(String[] args) {
         Servidor servidor = new Servidor();
@@ -18,25 +18,30 @@ public class Servidor {
 
     public void iniciar() {
         try {
-            ServerSockete = new ServerSocket(6969);
+            // Inicializa el servidor y establece el número de puerto en el que escuchará conexiones
+            servidorSocket = new ServerSocket(6969);
             System.out.println("Servidor iniciado. Esperando conexiones...");
 
-            clientes = new ArrayList<>();
+            // Lista para almacenar los manejadores de clientes conectados
+            listaClientes = new ArrayList<>();
 
             while (true) {
-                Socket clientSocket = ServerSockete.accept();
+                // Acepta una nueva conexión de cliente
+                Socket socketCliente = servidorSocket.accept();
                 System.out.println("Nueva conexión aceptada");
 
-                ClienteHandler clienteHandler = new ClienteHandler(clientSocket);
-                clientes.add(clienteHandler);
+                // Crea un manejador de cliente para manejar las interacciones con este cliente
+                ClienteHandler clienteHandler = new ClienteHandler(socketCliente);
+                listaClientes.add(clienteHandler);
                 clienteHandler.start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (ServerSockete != null) {
+            // Cierra el socket del servidor al finalizar
+            if (servidorSocket != null) {
                 try {
-                    ServerSockete.close();
+                    servidorSocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -45,48 +50,53 @@ public class Servidor {
     }
 
     private class ClienteHandler extends Thread {
-        private Socket clientSockete;
-        private PrintWriter out;
-        private BufferedReader in;
-        private String username;
+        private Socket socketCliente;
+        private PrintWriter escritor;
+        private BufferedReader lector;
+        private String nombreUsuario;
 
         public ClienteHandler(Socket socket) {
-            clientSockete = socket;
+            socketCliente = socket;
         }
 
         public void run() {
             try {
-                out = new PrintWriter(clientSockete.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(clientSockete.getInputStream()));
+                // Establece flujos de entrada y salida para la comunicación con el cliente
+                escritor = new PrintWriter(socketCliente.getOutputStream(), true);
+                lector = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
 
-                out.println("Ingresa nombre de usuario:");
-                username = in.readLine();
-                System.out.println("Nuevo usuario: " + username);
+                // Solicita al cliente que ingrese su nombre de usuario
+                escritor.println("Ingresa tu nombre de usuario:");
+                nombreUsuario = lector.readLine();
+                System.out.println("Nuevo usuario conectado: " + nombreUsuario);
 
                 String mensaje;
-                while ((mensaje = in.readLine()) != null) {
-                    System.out.println("Mensaje recibido de " + username + ": " + mensaje);
+                // Bucle para recibir y difundir mensajes
+                while ((mensaje = lector.readLine()) != null) {
+                    System.out.println("Mensaje recibido de " + nombreUsuario + ": " + mensaje);
 
-// Difusión del mensaje a todos los clientes excepto al cliente que lo envió
-                    for (ClienteHandler cliente : Servidor.this.clientes) {
+                    // Difunde el mensaje a todos los clientes excepto al cliente que lo envió
+                    for (ClienteHandler cliente : Servidor.this.listaClientes) {
                         if (cliente != this) {
-                            cliente.enviarMensaje(username + ": " + mensaje);
+                            cliente.enviarMensaje(nombreUsuario + ": " + mensaje);
                         }
                     }
                 }
 
-                System.out.println("usuario desconectado: " + username);
-                clientes.remove(this);
-                clientSockete.close();
+                // Usuario desconectado, realiza limpieza y elimina de la lista
+                System.out.println("Usuario desconectado: " + nombreUsuario);
+                listaClientes.remove(this);
+                socketCliente.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (out != null) {
-                    out.close();
+                // Cierra los flujos de entrada y salida al finalizar
+                if (escritor != null) {
+                    escritor.close();
                 }
                 try {
-                    if (in != null) {
-                        in.close();
+                    if (lector != null) {
+                        lector.close();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -94,8 +104,9 @@ public class Servidor {
             }
         }
 
+        // Método para enviar un mensaje al cliente
         public void enviarMensaje(String mensaje) {
-            out.println(mensaje);
+            escritor.println(mensaje);
         }
     }
 }
