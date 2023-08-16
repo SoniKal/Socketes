@@ -10,7 +10,7 @@ public class Cliente {
     public static void main(String[] args) {
         try {
             // Establecer una conexión con el servidor
-            Socket socket = new Socket("172.16.255.221", 6969);
+            Socket socket = new Socket("172.16.255.201", 6969);
             PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
@@ -24,7 +24,7 @@ public class Cliente {
                 try {
                     String mensaje;
                     while ((mensaje = lector.readLine()) != null) {
-                        System.out.println("Mensaje del servidor: " + mensaje);
+                        System.out.println(mensaje);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
