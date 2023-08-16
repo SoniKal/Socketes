@@ -24,12 +24,7 @@ public class Cliente {
                 try {
                     String mensaje;
                     while ((mensaje = lector.readLine()) != null) {
-                        // Verifica si el mensaje es la solicitud del nombre de usuario
-                        if (mensaje.equals("Ingresa tu nombre de usuario:")) {
-                            System.out.println(mensaje);
-                        } else {
-                            System.out.println(mensaje); // Mostrar el mensaje directamente
-                        }
+                        System.out.println("Mensaje del servidor: " + mensaje);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -42,8 +37,7 @@ public class Cliente {
                 try {
                     String mensajeUsuario;
                     while ((mensajeUsuario = lectorConsola.readLine()) != null) {
-                        // Agregar el nombre de usuario al mensaje antes de enviarlo
-                        escritor.println("[" + nombreUsuario + "]: " + mensajeUsuario);
+                        escritor.println(mensajeUsuario);
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES); // Esperar para evitar enviar mensajes muy rápido
                     }
                 } catch (IOException | InterruptedException e) {

@@ -1,0 +1,44 @@
+...
+
+public class Servidor {
+    ...
+
+    private class ClienteHandler extends Thread {
+        ...
+
+        public void run() {
+            try {
+                ...
+                // Solicita al cliente que ingrese su nombre de usuario
+                escritor.println("Ingresa tu nombre de usuario:");
+                nombreUsuario = lector.readLine();
+                System.out.println("Nuevo usuario conectado: " + nombreUsuario);
+
+                String mensaje;
+                // Bucle para recibir y difundir mensajes
+                while ((mensaje = lector.readLine()) != null) {
+                    // Verifica si el mensaje es la solicitud del nombre de usuario
+                    if (mensaje.equals("Ingresa tu nombre de usuario:")) {
+                        continue; // Salta la iteración y espera el próximo mensaje
+                    }
+
+                    System.out.println("Mensaje recibido de " + nombreUsuario + ": " + mensaje);
+
+                    // Difunde el mensaje a todos los clientes excepto al cliente que lo envió
+                    for (ClienteHandler cliente : Servidor.this.listaClientes) {
+                        if (cliente != this) {
+                            cliente.enviarMensaje(nombreUsuario + ": " + mensaje);
+                        }
+                    }
+                }
+                ...
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                ...
+            }
+        }
+
+        ...
+    }
+}
