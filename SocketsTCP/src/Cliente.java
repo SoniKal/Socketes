@@ -24,7 +24,12 @@ public class Cliente {
                 try {
                     String mensaje;
                     while ((mensaje = lector.readLine()) != null) {
-                        System.out.println(mensaje); // Mostrar el mensaje directamente
+                        // Verifica si el mensaje es la solicitud del nombre de usuario
+                        if (mensaje.equals("Ingresa tu nombre de usuario:")) {
+                            System.out.println(mensaje);
+                        } else {
+                            System.out.println(mensaje); // Mostrar el mensaje directamente
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

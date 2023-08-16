@@ -73,6 +73,11 @@ public class Servidor {
                 String mensaje;
                 // Bucle para recibir y difundir mensajes
                 while ((mensaje = lector.readLine()) != null) {
+                    // Verifica si el mensaje es la solicitud del nombre de usuario
+                    if (mensaje.equals("Ingresa tu nombre de usuario:")) {
+                        continue; // Salta la iteración y espera el próximo mensaje
+                    }
+
                     System.out.println("Mensaje recibido de " + nombreUsuario + ": " + mensaje);
 
                     // Difunde el mensaje a todos los clientes excepto al cliente que lo envió
