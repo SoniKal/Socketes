@@ -68,7 +68,7 @@ public class Servidor {
                 while ((mensaje = in.readLine()) != null) { //loop : escucha mensajes de clientes y los muestra
                     System.out.println("Mensaje recibido de " + username + ": " + mensaje);
 
-// difunde el mensaje que el cliente envio hacia los demas ; excepto a el mismo
+                    // difunde el mensaje que el cliente envio hacia los demas ; excepto a el mismo
                     for (ClienteHandler cliente : Servidor.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(username + ": " + mensaje);
