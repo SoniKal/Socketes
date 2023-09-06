@@ -7,16 +7,17 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Scanner;
+
 public class Extra {
     public static void main(String[] args) throws Exception {
 
+        Scanner scanner = new Scanner(System.in);
 
         //texto a cifrar
-        String str = "Van a dormir a ruckj";
 
         System.out.println("\nOriginal: ");
-
-        System.out.println(str);
+        String str = scanner.nextLine();
 
         //crear clase
         RSA rsa = new RSA();
@@ -34,7 +35,6 @@ public class Extra {
 
         //ciframos y imprimimos; se lo devuelve en 'secure'
         String secure = rsa.Encrypt(str);
-
         System.out.println("\nCifrado:");
         System.out.println(secure);
 
@@ -53,8 +53,6 @@ public class Extra {
         //imprimimos
         System.out.println("\nDescifrado:");
         System.out.println(unsecure);
-
-
 
     }
 }
