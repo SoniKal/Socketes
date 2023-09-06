@@ -1,6 +1,6 @@
 // ...
 
-public class Cliente {
+public class ClienteOrig {
     // ...
 
     public static void main(String[] args) {
@@ -54,7 +54,7 @@ public class Cliente {
 
 // ...
 
-public class Servidor {
+public class ServidorOrig {
     // ...
 
     private class ClienteHandler extends Thread {
@@ -74,7 +74,7 @@ public class Servidor {
                 while ((mensaje = in.readLine()) != null) {
                     // Enviar el mensaje firmado a otros clientes
                     Mensaje mensajeFirmado = new Mensaje(username + ": " + mensaje, keyPair.getPrivate());
-                    for (ClienteHandler cliente : Servidor.this.clientes) {
+                    for (ClienteHandler cliente : ServidorOrig.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(mensajeFirmado.aBase64());
                         }

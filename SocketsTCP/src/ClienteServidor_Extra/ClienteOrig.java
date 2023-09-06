@@ -8,11 +8,9 @@ import java.io.PrintWriter;//escribe datos de salida
 import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
-public class Cliente {
+public class ClienteOrig {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000; // 3 segundos de espera para evitar spam
     private static RSA rsa = new RSA();
     private static RSA rsa2 = new RSA();
@@ -97,6 +95,6 @@ public class Cliente {
     }
 
     public static void setRsa(RSA rsa) {
-        Cliente.rsa = rsa;
+        ClienteOrig.rsa = rsa;
     }
 }

@@ -1,6 +1,6 @@
 basandonos en las siguientes clases de java:
 
-Servidor:
+ServidorOrig:
 
 import java.io.BufferedReader; //lee datos que entran
 import java.io.IOException; //excepcion de errores
@@ -11,19 +11,19 @@ import java.net.Socket; // lo mismo que el de arriba
 import java.util.ArrayList;
 import java.util.List;
 
-public class Servidor {
+public class ServidorOrig {
     private ServerSocket ServerSockete;
     private static List<ClienteHandler> clientes;
 
     public static void main(String[] args) {
-        Servidor servidor = new Servidor();
+        ServidorOrig servidor = new ServidorOrig();
         servidor.iniciar();
     }
 
     public void iniciar() { // crea un serversocket que espera conexiones de clientes
         try {
             ServerSockete = new ServerSocket(6969);
-            System.out.println("Servidor iniciado. Esperando conexiones...");
+            System.out.println("ServidorOrig iniciado. Esperando conexiones...");
 
             clientes = new ArrayList<>();
 
@@ -73,7 +73,7 @@ public class Servidor {
                     System.out.println("Mensaje recibido de " + username + ": " + mensaje);
 
                 // difunde el mensaje que el cliente envio hacia los demas ; excepto a el mismo
-                    for (ClienteHandler cliente : Servidor.this.clientes) {
+                    for (ClienteHandler cliente : ServidorOrig.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(username + ": " + mensaje);
                         }
@@ -106,7 +106,7 @@ public class Servidor {
     }
 }
 
-y la clase Cliente:
+y la clase ClienteOrig:
 
 import java.io.BufferedReader;//lee datos que entran
 import java.io.IOException;//excepcion de errores
@@ -114,7 +114,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;//escribe datos de salida
 import java.net.Socket;
 
-public class Cliente {
+public class ClienteOrig {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000; // 3 segundos de espera para evitar spam
 
 
