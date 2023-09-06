@@ -1,0 +1,165 @@
+// ...
+
+public class Cliente {
+    // ...
+
+    public static void main(String[] args) {
+        // ...
+
+        // Hilo que recibe mensajes del servidor
+        Thread hiloRecibirMensajes = new Thread(() -> {
+            try {
+                String mensajeBase64;
+                while ((mensajeBase64 = lector.readLine()) != null) {
+                    // Convertir la cadena Base64 a un objeto Mensaje
+                    Mensaje mensaje = Mensaje.desdeBase64(mensajeBase64);
+                    if (mensaje != null) {
+                        // Verificar la firma del mensaje
+                        if (mensaje.verificarFirma(clavePublicaServidor)) {
+                            System.out.println(mensaje.getTexto());
+                        } else {
+                            System.out.println("Mensaje no válido: firma incorrecta");
+                        }
+                    } else {
+                        System.out.println("Mensaje no válido");
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        hiloRecibirMensajes.start();
+
+        // Hilo que envía mensajes al servidor
+        Thread hiloEnviarMensajes = new Thread(() -> {
+            try {
+                String mensajeUsuario;
+                while ((mensajeUsuario = lectorConsola.readLine()) != null) {
+                    // Enviar el mensaje firmado al servidor
+                    Mensaje mensajeFirmado = new Mensaje(mensajeUsuario, keyPair.getPrivate());
+                    escritor.println(mensajeFirmado.aBase64());
+                    Thread.sleep(TIEMPO_ENTRE_MENSAJES);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        hiloEnviarMensajes.start();
+
+        // ...
+    }
+}
+
+------------------------------------------------------------------------------------------------
+
+// ...
+
+public class Servidor {
+    // ...
+
+    private class ClienteHandler extends Thread {
+        // ...
+
+        public void run() {
+            try {
+                // ...
+
+                out.println("Ingresa nombre de usuario:");
+                username = in.readLine();
+                System.out.println("Nuevo usuario: " + username);
+
+                // ...
+
+                String mensaje;
+                while ((mensaje = in.readLine()) != null) {
+                    // Enviar el mensaje firmado a otros clientes
+                    Mensaje mensajeFirmado = new Mensaje(username + ": " + mensaje, keyPair.getPrivate());
+                    for (ClienteHandler cliente : Servidor.this.clientes) {
+                        if (cliente != this) {
+                            cliente.enviarMensaje(mensajeFirmado.aBase64());
+                        }
+                    }
+                }
+
+                // ...
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                // ...
+            }
+        }
+
+        public void enviarMensaje(String mensaje) {
+            out.println(mensaje);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------------------------
+
+import java.security.*;
+import java.util.Base64;
+
+public class Mensaje {
+    private String texto;
+        private byte[] firma; // Firma digital del mensaje
+
+    public Mensaje(String texto, PrivateKey clavePrivada) {
+        this.texto = texto;
+        this.firma = firmarMensaje(texto, clavePrivada);
+    }
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public byte[] getFirma() {
+        return firma;
+    }
+
+    // Método para firmar un mensaje utilizando la clave privada
+    private byte[] firmarMensaje(String mensaje, PrivateKey clavePrivada) {
+        try {
+            Signature firma = Signature.getInstance("SHA256withRSA");
+            firma.initSign(clavePrivada);
+            firma.update(mensaje.getBytes());
+            return firma.sign();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Método para verificar la firma digital de un mensaje utilizando la clave pública
+    public boolean verificarFirma(PublicKey clavePublica) {
+        try {
+            Signature firma = Signature.getInstance("SHA256withRSA");
+            firma.initVerify(clavePublica);
+            firma.update(texto.getBytes());
+            return firma.verify(firma);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Convierte el mensaje y la firma a una cadena codificada en Base64
+    public String aBase64() {
+        String mensajeCodificado = Base64.getEncoder().encodeToString(texto.getBytes());
+        String firmaCodificada = Base64.getEncoder().encodeToString(firma);
+        return mensajeCodificado + ":" + firmaCodificada;
+    }
+
+    // Convierte una cadena codificada en Base64 a un objeto Mensaje
+    public static Mensaje desdeBase64(String mensajeBase64) {
+        String[] partes = mensajeBase64.split(":");
+        if (partes.length == 2) {
+            String texto = new String(Base64.getDecoder().decode(partes[0]));
+            byte[] firma = Base64.getDecoder().decode(partes[1]);
+            Mensaje mensaje = new Mensaje(texto, null);
+            mensaje.firma = firma;
+            return mensaje;
+        }
+        return null;
+    }
+}

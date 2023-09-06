@@ -13,7 +13,7 @@ public class Cliente {
     public static void main(String[] args) {
         try {
             // establece una conexión con el servidor donde está esa IP representada abajo
-            Socket socket = new Socket("172.16.255.201", 6969);
+            Socket socket = new Socket("172.16.255.221", 6969);
             PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
@@ -43,7 +43,12 @@ public class Cliente {
                         escritor.println(mensajeUsuario);
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES); // espera de mensajes (para que no se envien rapido)
                     }
-                } catch (IOException | InterruptedException e) {
+                } catch
+
+
+
+
+                (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             });
@@ -62,4 +67,5 @@ public class Cliente {
             e.printStackTrace();
         }
     }
+
 }
