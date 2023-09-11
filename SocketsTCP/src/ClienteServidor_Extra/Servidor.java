@@ -1,3 +1,5 @@
+package ClienteServidor_Extra;
+
 import java.io.BufferedReader; //lee datos que entran
 import java.io.IOException; //excepcion de errores
 import java.io.InputStreamReader; //igual que el primero
@@ -19,7 +21,7 @@ public class Servidor {
     public void iniciar() { // crea un serversocket que espera conexiones de clientes
         try {
             ServerSockete = new ServerSocket(6969);
-            System.out.println("Servidor iniciado. Esperando conexiones...");
+            System.out.println("ClienteServidor_Extra.Servidor iniciado. Esperando conexiones...");
 
             clientes = new ArrayList<>();
 
@@ -66,7 +68,7 @@ public class Servidor {
 
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) { //loop : escucha mensajes de clientes y los muestra
-                    System.out.println("Mensaje recibido de " + username + ": " + mensaje);
+                    System.out.println("ClienteServidor_Extra.Mensaje recibido de " + username + ": " + mensaje);
 
                 // difunde el mensaje que el cliente envio hacia los demas ; excepto a el mismo
                     for (ClienteHandler cliente : clientes) {

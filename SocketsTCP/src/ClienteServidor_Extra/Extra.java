@@ -1,3 +1,5 @@
+package ClienteServidor_Extra;
+
 import java.util.Scanner;
 
 public class Extra {

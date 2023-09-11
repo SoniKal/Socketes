@@ -1,3 +1,5 @@
+package ClienteServidor_Extra;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -7,7 +9,7 @@ import java.util.Base64;
 
 public class AES {
     public static void main(String[] args) throws Exception {
-        // clave debe tener 16, 24 o 32 bytes para AES
+        // clave debe tener 16, 24 o 32 bytes para ClienteServidor_Extra.AES
         String clave = "dummytest"; // Cambia esto por tu clave secreta
         String textoOriginal = "hello world";
 
@@ -15,11 +17,11 @@ public class AES {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
         // crea clave
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("AES");
-        SecretKey key = new SecretKeySpec(clave.getBytes(), "AES");
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("ClienteServidor_Extra.AES");
+        SecretKey key = new SecretKeySpec(clave.getBytes(), "ClienteServidor_Extra.AES");
 
         // inicia cifrado
-        Cipher cifrador = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        Cipher cifrador = Cipher.getInstance("ClienteServidor_Extra.AES/CBC/PKCS5Padding");
         cifrador.init(Cipher.ENCRYPT_MODE, key, ivSpec);
 
         // texto original cifrado

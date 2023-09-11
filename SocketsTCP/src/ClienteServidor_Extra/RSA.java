@@ -1,3 +1,5 @@
+package ClienteServidor_Extra;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 
@@ -38,7 +40,7 @@ public class RSA {
     public void setPrivateKeyString(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
         byte[] encodedPrivateKey = stringToBytes(key);
 
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = KeyFactory.getInstance("ClienteServidor_Extra.RSA");
         PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedPrivateKey);
         PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
         this.PrivateKey = privateKey;
@@ -48,7 +50,7 @@ public class RSA {
 
         byte[] encodedPublicKey = stringToBytes(key);
 
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = KeyFactory.getInstance("ClienteServidor_Extra.RSA");
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublicKey);
         PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
         this.PublicKey = publicKey;
@@ -67,7 +69,7 @@ public class RSA {
 
     public void genKeyPair(int size) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException  {
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ClienteServidor_Extra.RSA");
         kpg.initialize(size);
         KeyPair kp = kpg.genKeyPair();
 
@@ -82,8 +84,20 @@ public class RSA {
 
         byte[] encryptedBytes;
 
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("ClienteServidor_Extra.RSA");
         cipher.init(Cipher.ENCRYPT_MODE, this.PublicKey);
+        encryptedBytes = cipher.doFinal(plain.getBytes());
+
+        return bytesToString(encryptedBytes);
+
+    }
+
+    public String EncryptWithPrivate(String plain) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException,IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, UnsupportedEncodingException, NoSuchProviderException {
+
+        byte[] encryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("ClienteServidor_Extra.RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, this.PrivateKey);
         encryptedBytes = cipher.doFinal(plain.getBytes());
 
         return bytesToString(encryptedBytes);
@@ -94,8 +108,18 @@ public class RSA {
 
         byte[] decryptedBytes;
 
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("ClienteServidor_Extra.RSA");
         cipher.init(Cipher.DECRYPT_MODE, this.PrivateKey);
+        decryptedBytes = cipher.doFinal(stringToBytes(result));
+        return new String(decryptedBytes);
+    }
+
+    public String DecryptWithPublic(String result) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+
+        byte[] decryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("ClienteServidor_Extra.RSA");
+        cipher.init(Cipher.DECRYPT_MODE, this.PublicKey);
         decryptedBytes = cipher.doFinal(stringToBytes(result));
         return new String(decryptedBytes);
     }
@@ -133,9 +157,10 @@ public class RSA {
         }
     }
 
-    public void openFromDiskPublicKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public java.security.PublicKey openFromDiskPublicKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         String content = this.readFileAsString(path);
         this.setPublicKeyString(content);
+        return null;
     }
 
     public void openFromDiskPrivateKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {

@@ -1,26 +1,19 @@
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+basandonos en las siguientes clases de java:
+
+ServidorOrig:
+
 import java.io.BufferedReader; //lee datos que entran
 import java.io.IOException; //excepcion de errores
 import java.io.InputStreamReader; //igual que el primero
 import java.io.PrintWriter; //escribe datos de salida
 import java.net.ServerSocket; // establecen conexiones servidor - cliente
 import java.net.Socket; // lo mismo que el de arriba
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class ServidorOrig {
     private ServerSocket ServerSockete;
     private static List<ClienteHandler> clientes;
-    private static RSA rsa = new RSA();
-    private static String file_private = "/tmp/rsa.pri";
-    private static String file_public = "/tmp/rsa.pub";
-    private static HashMap<PublicKey, ClienteHandler> listaClientes = new HashMap<>();
 
     public static void main(String[] args) {
         ServidorOrig servidor = new ServidorOrig();
@@ -29,11 +22,8 @@ public class ServidorOrig {
 
     public void iniciar() { // crea un serversocket que espera conexiones de clientes
         try {
-            rsa.genKeyPair(512);
-            file_private = "/tmp/rsa.pri";
-            file_public = "/tmp/rsa.pub";
             ServerSockete = new ServerSocket(6969);
-            System.out.println("Servidor iniciado. Esperando conexiones...");
+            System.out.println("ServidorOrig iniciado. Esperando conexiones...");
 
             clientes = new ArrayList<>();
 
@@ -47,16 +37,6 @@ public class ServidorOrig {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
         } finally {
             if (ServerSockete != null) {
                 try {
@@ -124,29 +104,83 @@ public class ServidorOrig {
             out.println(mensaje);
         }
     }
-
-
-    public ServerSocket getServerSockete() {
-        return ServerSockete;
-    }
-
-    public void setServerSockete(ServerSocket serverSockete) {
-        ServerSockete = serverSockete;
-    }
-
-    public static List<ClienteHandler> getClientes() {
-        return clientes;
-    }
-
-    public static void setClientes(List<ClienteHandler> clientes) {
-        ServidorOrig.clientes = clientes;
-    }
-
-    public static RSA getRsa() {
-        return rsa;
-    }
-
-    public static void setRsa(RSA rsa) {
-        ServidorOrig.rsa = rsa;
-    }
 }
+
+y la clase ClienteOrig:
+
+import java.io.BufferedReader;//lee datos que entran
+import java.io.IOException;//excepcion de errores
+import java.io.InputStreamReader;
+import java.io.PrintWriter;//escribe datos de salida
+import java.net.Socket;
+
+public class ClienteOrig {
+    private static final long TIEMPO_ENTRE_MENSAJES = 3000; // 3 segundos de espera para evitar spam
+
+
+    // ANTES DE EJECUTAR: EL SERVIDOR DEBE ESTAR ABIERTO //
+
+    public static void main(String[] args) {
+        try {
+            // establece una conexión con el servidor donde está esa IP representada abajo
+            Socket socket = new Socket("172.16.255.201", 6969);
+            PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
+
+            // recibe y muestra el nombre de usuario asignado
+            String nombreUsuario = lector.readLine();
+            System.out.println("¡Bienvenido, " + nombreUsuario + "!");
+
+            // hilo que recibe mensajes del servidor
+            Thread hiloRecibirMensajes = new Thread(() -> {
+                try {
+                    String mensaje;
+                    while ((mensaje = lector.readLine()) != null) {
+                        System.out.println(mensaje);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            hiloRecibirMensajes.start();
+
+            // hilo qye envia mensajes al servidor
+            Thread hiloEnviarMensajes = new Thread(() -> {
+                try {
+                    String mensajeUsuario;
+                    while ((mensajeUsuario = lectorConsola.readLine()) != null) {
+                        escritor.println(mensajeUsuario);
+                        Thread.sleep(TIEMPO_ENTRE_MENSAJES); // espera de mensajes (para que no se envien rapido)
+                    }
+                } catch
+
+
+
+
+                (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            hiloEnviarMensajes.start();
+
+            // espera que ambos hilos terminen antes de cerrar los recursos
+            hiloRecibirMensajes.join();
+            hiloEnviarMensajes.join();
+
+            // cierra los recursos utilizados
+            escritor.close();
+            lector.close();
+            lectorConsola.close();
+            socket.close();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+reescribir ambas clases para que los mensajes esten encriptados de manera asimetrica con el metodo RSA
+para esto crear una nueva clase llamada "Mensaje" que cuente con el texto en forma de String y la firma digital
+utilizar solo librerias y metodos basicos
+modificar para que las PCs conectadas al servidor se envien entre si esta Clase "Mensaje"

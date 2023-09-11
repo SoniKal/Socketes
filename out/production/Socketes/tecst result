@@ -11,17 +11,17 @@ public class ClienteOrig {
             try {
                 String mensajeBase64;
                 while ((mensajeBase64 = lector.readLine()) != null) {
-                    // Convertir la cadena Base64 a un objeto ClienteServidor_Extra.Mensaje
-                    ClienteServidor_Extra.Mensaje mensaje = ClienteServidor_Extra.Mensaje.desdeBase64(mensajeBase64);
+                    // Convertir la cadena Base64 a un objeto Mensaje
+                    Mensaje mensaje = Mensaje.desdeBase64(mensajeBase64);
                     if (mensaje != null) {
                         // Verificar la firma del mensaje
                         if (mensaje.verificarFirma(clavePublicaServidor)) {
                             System.out.println(mensaje.getTexto());
                         } else {
-                            System.out.println("ClienteServidor_Extra.Mensaje no válido: firma incorrecta");
+                            System.out.println("Mensaje no válido: firma incorrecta");
                         }
                     } else {
-                        System.out.println("ClienteServidor_Extra.Mensaje no válido");
+                        System.out.println("Mensaje no válido");
                     }
                 }
             } catch (IOException e) {
@@ -36,7 +36,7 @@ public class ClienteOrig {
                 String mensajeUsuario;
                 while ((mensajeUsuario = lectorConsola.readLine()) != null) {
                     // Enviar el mensaje firmado al servidor
-                    ClienteServidor_Extra.Mensaje mensajeFirmado = new ClienteServidor_Extra.Mensaje(mensajeUsuario, keyPair.getPrivate());
+                    Mensaje mensajeFirmado = new Mensaje(mensajeUsuario, keyPair.getPrivate());
                     escritor.println(mensajeFirmado.aBase64());
                     Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                 }
@@ -73,7 +73,7 @@ public class ServidorOrig {
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) {
                     // Enviar el mensaje firmado a otros clientes
-                    ClienteServidor_Extra.Mensaje mensajeFirmado = new ClienteServidor_Extra.Mensaje(username + ": " + mensaje, keyPair.getPrivate());
+                    Mensaje mensajeFirmado = new Mensaje(username + ": " + mensaje, keyPair.getPrivate());
                     for (ClienteHandler cliente : ServidorOrig.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(mensajeFirmado.aBase64());
@@ -100,11 +100,11 @@ public class ServidorOrig {
 import java.security.*;
 import java.util.Base64;
 
-public class ClienteServidor_Extra.Mensaje {
+public class Mensaje {
     private String texto;
         private byte[] firma; // Firma digital del mensaje
 
-    public ClienteServidor_Extra.Mensaje(String texto, PrivateKey clavePrivada) {
+    public Mensaje(String texto, PrivateKey clavePrivada) {
         this.texto = texto;
         this.firma = firmarMensaje(texto, clavePrivada);
     }
@@ -150,13 +150,13 @@ public class ClienteServidor_Extra.Mensaje {
         return mensajeCodificado + ":" + firmaCodificada;
     }
 
-    // Convierte una cadena codificada en Base64 a un objeto ClienteServidor_Extra.Mensaje
-    public static ClienteServidor_Extra.Mensaje desdeBase64(String mensajeBase64) {
+    // Convierte una cadena codificada en Base64 a un objeto Mensaje
+    public static Mensaje desdeBase64(String mensajeBase64) {
         String[] partes = mensajeBase64.split(":");
         if (partes.length == 2) {
             String texto = new String(Base64.getDecoder().decode(partes[0]));
             byte[] firma = Base64.getDecoder().decode(partes[1]);
-            ClienteServidor_Extra.Mensaje mensaje = new ClienteServidor_Extra.Mensaje(texto, null);
+            Mensaje mensaje = new Mensaje(texto, null);
             mensaje.firma = firma;
             return mensaje;
         }
