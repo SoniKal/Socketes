@@ -50,6 +50,7 @@ public class ServidorDFTesting {
                 ObjectInputStream entrada = new ObjectInputStream(clientSocket.getInputStream());
                 PublicKey llaveCliente = (PublicKey) entrada.readObject();
 
+
                 if (verificarClavePublica(llaveCliente) == true) {
                     clavesPublicasClientes.add(llaveCliente);
 
