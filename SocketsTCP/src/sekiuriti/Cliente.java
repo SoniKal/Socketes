@@ -30,6 +30,9 @@ public class Cliente {
             rsa.genKeyPair(512);
             rsa.saveToDiskPrivateKey("/tmp/rsa.priCliente");
             rsa.saveToDiskPublicKey("/tmp/rsa.pubCliente");
+            rsa.openFromDiskPrivateKey("/tmp/rsa.priCliente");
+            rsa.openFromDiskPublicKey("/tmp/rsa.pubCliente");
+
             Mensaje claveServer = (Mensaje) lector.readObject();
             rsaServer.setPublicKeyString(claveServer.getExtra());
 

@@ -183,4 +183,19 @@ public class RSA {
         return fileData.toString();
     }
 
+    public java.security.PrivateKey getPrivateKey() {
+        return PrivateKey;
+    }
+
+    public void setPrivateKey(java.security.PrivateKey privateKey) {
+        PrivateKey = privateKey;
+    }
+
+    public java.security.PublicKey getPublicKey() {
+        return PublicKey;
+    }
+
+    public void setPublicKey(java.security.PublicKey publicKey) {
+        PublicKey = publicKey;
+    }
 }

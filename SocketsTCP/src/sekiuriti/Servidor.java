@@ -30,6 +30,12 @@ public class Servidor {
         try {
             serverSocket = new ServerSocket(6969);
             System.out.println("Servidor iniciado. Esperando conexiones...");
+            rsa = new RSA();
+            rsa.genKeyPair(512);
+            rsa.saveToDiskPrivateKey("/tmp/rsa.priServer");
+            rsa.saveToDiskPublicKey("/tmp/rsa.pubServer");
+            rsa.openFromDiskPrivateKey("/tmp/rsa.priServer");
+            rsa.openFromDiskPublicKey("/tmp/rsa.pubServer");
 
             clientes = new ArrayList<>();
 
@@ -43,6 +49,18 @@ public class Servidor {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
         } finally {
             if (serverSocket != null) {
                 try {
@@ -70,17 +88,8 @@ public class Servidor {
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 hash = new Hash();
-                rsa = new RSA();
-                rsa.openFromDiskPrivateKey("/tmp/rsa.priServer");
-                rsa.openFromDiskPublicKey("/tmp/rsa.pubServer");
 
-                if(rsa.getPublicKeyString().isEmpty() || rsa.getPrivateKeyString().isEmpty()){
-                    rsa.genKeyPair(512);
-                    rsa.saveToDiskPrivateKey("/tmp/rsa.priServer");
-                    rsa.saveToDiskPublicKey("/tmp/rsa.pubServer");
-                }
-
-                out.writeObject(rsa.getPublicKeyString());
+                out.writeObject(new Mensaje(rsa.getPublicKeyString()));
                 out.flush();
 
                 Mensaje claveCliente = (Mensaje) in.readObject();
@@ -91,6 +100,7 @@ public class Servidor {
 
                 Mensaje nombreUsuario = (Mensaje) in.readObject();
                 username = nombreUsuario.getExtra();
+
                 System.out.println("Nuevo usuario: " + username);
 
                 Mensaje mensaje;
