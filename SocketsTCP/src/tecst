@@ -1,6 +1,6 @@
 basandonos en las siguientes clases de java:
 
-ServidorOrig:
+Servidor:
 
 import java.io.BufferedReader; //lee datos que entran
 import java.io.IOException; //excepcion de errores
@@ -11,19 +11,19 @@ import java.net.Socket; // lo mismo que el de arriba
 import java.util.ArrayList;
 import java.util.List;
 
-public class ServidorOrig {
+public class Servidor {
     private ServerSocket ServerSockete;
     private static List<ClienteHandler> clientes;
 
     public static void main(String[] args) {
-        ServidorOrig servidor = new ServidorOrig();
+        Servidor servidor = new Servidor();
         servidor.iniciar();
     }
 
     public void iniciar() { // crea un serversocket que espera conexiones de clientes
         try {
             ServerSockete = new ServerSocket(6969);
-            System.out.println("ServidorOrig iniciado. Esperando conexiones...");
+            System.out.println("Servidor iniciado. Esperando conexiones...");
 
             clientes = new ArrayList<>();
 
@@ -70,10 +70,10 @@ public class ServidorOrig {
 
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) { //loop : escucha mensajes de clientes y los muestra
-                    System.out.println("ClienteServidor_Extra.Mensaje recibido de " + username + ": " + mensaje);
+                    System.out.println("Mensaje recibido de " + username + ": " + mensaje);
 
                 // difunde el mensaje que el cliente envio hacia los demas ; excepto a el mismo
-                    for (ClienteHandler cliente : ServidorOrig.this.clientes) {
+                    for (ClienteHandler cliente : Servidor.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(username + ": " + mensaje);
                         }
@@ -106,7 +106,7 @@ public class ServidorOrig {
     }
 }
 
-y la clase ClienteOrig:
+y la clase Cliente:
 
 import java.io.BufferedReader;//lee datos que entran
 import java.io.IOException;//excepcion de errores
@@ -114,7 +114,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;//escribe datos de salida
 import java.net.Socket;
 
-public class ClienteOrig {
+public class Cliente {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000; // 3 segundos de espera para evitar spam
 
 
@@ -180,7 +180,7 @@ public class ClienteOrig {
 
 }
 
-reescribir ambas clases para que los mensajes esten encriptados de manera asimetrica con el metodo ClienteServidor_Extra.RSA
-para esto crear una nueva clase llamada "ClienteServidor_Extra.Mensaje" que cuente con el texto en forma de String y la firma digital
+reescribir ambas clases para que los mensajes esten encriptados de manera asimetrica con el metodo RSA
+para esto crear una nueva clase llamada "Mensaje" que cuente con el texto en forma de String y la firma digital
 utilizar solo librerias y metodos basicos
-modificar para que las PCs conectadas al servidor se envien entre si esta Clase "ClienteServidor_Extra.Mensaje"
+modificar para que las PCs conectadas al servidor se envien entre si esta Clase "Mensaje"
