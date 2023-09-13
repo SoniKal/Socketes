@@ -25,7 +25,7 @@ public class ClienteDFTesting {
     public static void main(String[] args) throws Exception {
         try {
             // establece una conexión con el servidor donde está esa IP representada abajo
-            Socket socket = new Socket("172.16.255.221", 6969);
+            Socket socket = new Socket("172.16.255.22   1", 6969);
             PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));

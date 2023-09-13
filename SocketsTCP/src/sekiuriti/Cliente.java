@@ -1,79 +1,57 @@
 package sekiuriti;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.security.*;
-import java.util.Base64;
+import java.io.*;
+import java.net.*;
 
 public class Cliente {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000;
-    private static PublicKey servidorPublicKey;
-    private static PrivateKey clientePrivateKey;
 
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("localhost", 6969);
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-            BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
+            Socket socket = new Socket("127.0.0.1", 6969);
+            ObjectOutputStream escritor = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream lector = new ObjectInputStream(socket.getInputStream());
+            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
 
-            // Obtener la clave pública del servidor
-            servidorPublicKey = (PublicKey) inputStream.readObject();
+            Mensaje nombreUsuario = (Mensaje) lector.readObject();
+            System.out.println("¡Bienvenido, " + nombreUsuario.getTexto() + "!");
 
-            // Generar un par de claves RSA para el cliente
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            KeyPair keyPair = keyPairGenerator.generateKeyPair();
-            clientePrivateKey = keyPair.getPrivate();
-            PublicKey clientePublicKey = keyPair.getPublic();
-
-            // Enviar la clave pública del cliente al servidor
-            outputStream.writeObject(clientePublicKey);
-
-            // Recibir y mostrar el nombre de usuario asignado
-            String nombreUsuario = inputStream.readUTF();
-            System.out.println("¡Bienvenido, " + nombreUsuario + "!");
-
-            // Hilo que recibe mensajes del servidor
-            Thread recibirMensajes = new Thread(() -> {
+            Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
-                    while (true) {
-                        Mensaje mensaje = (Mensaje) inputStream.readObject();
-                        if (mensaje.verificarFirma(servidorPublicKey)) {
-                            System.out.println(mensaje.getTexto());
-                        } else {
-                            System.out.println("Mensaje no válido recibido.");
-                        }
+                    Mensaje mensaje;
+                    while ((mensaje = (Mensaje) lector.readObject()) != null) {
+                        System.out.println(mensaje.getTexto());
                     }
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
             });
-            recibirMensajes.start();
+            hiloRecibirMensajes.start();
 
-            // Hilo que envía mensajes al servidor
-            Thread enviarMensajes = new Thread(() -> {
+            Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
-                    while (true) {
-                        String mensajeUsuario = consoleReader.readLine();
-                        Mensaje mensaje = new Mensaje(mensajeUsuario);
-                        mensaje.firmar(clientePrivateKey);
-                        outputStream.writeObject(mensaje);
-                        outputStream.flush();
+                    String mensajeUsuario;
+                    while ((mensajeUsuario = lectorConsola.readLine()) != null) {
+                        escritor.writeObject(new Mensaje(mensajeUsuario));
+                        escritor.flush();
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             });
-            enviarMensajes.start();
+            hiloEnviarMensajes.start();
 
-        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException e) {
+            hiloRecibirMensajes.join();
+            hiloEnviarMensajes.join();
+
+            escritor.close();
+            lector.close();
+            lectorConsola.close();
+            socket.close();
+        } catch (IOException | InterruptedException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 }
+

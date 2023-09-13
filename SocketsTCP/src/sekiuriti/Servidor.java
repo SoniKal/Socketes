@@ -1,9 +1,7 @@
 package sekiuriti;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.security.*;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +47,6 @@ public class Servidor {
         private ObjectOutputStream out;
         private ObjectInputStream in;
         private String username;
-        private PublicKey clientePublicKey;
 
         public ClienteHandler(Socket socket) {
             clientSocket = socket;
@@ -60,32 +57,21 @@ public class Servidor {
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 in = new ObjectInputStream(clientSocket.getInputStream());
 
-                // Enviar clave pública del servidor al cliente
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-                keyPairGenerator.initialize(2048);
-                KeyPair keyPair = keyPairGenerator.generateKeyPair();
-                PublicKey servidorPublicKey = keyPair.getPublic();
-                out.writeObject(servidorPublicKey);
-
-                out.writeUTF("Ingresa nombre de usuario:");
+                out.writeObject(new Mensaje("Ingresa nombre de usuario:"));
                 out.flush();
-                username = in.readUTF();
+
+                Mensaje nombreUsuario = (Mensaje) in.readObject();
+                username = nombreUsuario.getTexto();
                 System.out.println("Nuevo usuario: " + username);
 
-                String mensaje;
-                while ((mensaje = in.readUTF()) != null) {
-                    Mensaje mensajeRecibido = (Mensaje) in.readObject();
-                    if (mensajeRecibido.verificarFirma(clientePublicKey)) {
-                        System.out.println("Mensaje recibido de " + username + ": " + mensajeRecibido.getTexto());
+                Mensaje mensaje;
+                while ((mensaje = (Mensaje) in.readObject()) != null) {
+                    System.out.println("Mensaje recibido de " + username + ": " + mensaje.getTexto());
 
-                        // Difundir el mensaje que el cliente envió hacia los demás; excepto a él mismo
-                        for (ClienteHandler cliente : Servidor.this.clientes) {
-                            if (cliente != this) {
-                                cliente.enviarMensaje(username + ": " + mensajeRecibido.getTexto());
-                            }
+                    for (ClienteHandler cliente : Servidor.this.clientes) {
+                        if (cliente != this) {
+                            cliente.enviarMensaje(new Mensaje(username + ": " + mensaje.getTexto()));
                         }
-                    } else {
-                        System.out.println("Mensaje no válido recibido de " + username);
                     }
                 }
 
@@ -93,7 +79,7 @@ public class Servidor {
                 clientes.remove(this);
                 clientSocket.close();
 
-            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
                 try {
@@ -103,16 +89,15 @@ public class Servidor {
                     if (in != null) {
                         in.close();
                     }
-                    clientSocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
-        public void enviarMensaje(String mensaje) {
+        public void enviarMensaje(Mensaje mensaje) {
             try {
-                out.writeObject(new Mensaje(mensaje));
+                out.writeObject(mensaje);
                 out.flush();
             } catch (IOException e) {
                 e.printStackTrace();
