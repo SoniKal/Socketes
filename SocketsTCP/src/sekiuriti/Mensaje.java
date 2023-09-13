@@ -15,6 +15,11 @@ public class Mensaje implements Serializable {
         this.extra = nombre;
     }
 
+    public Mensaje(String mensajeEncriptado, String mensajeHasheado) {
+        this.mensajeEncriptado = mensajeEncriptado;
+        this.mensajeHasheado = mensajeHasheado;
+    }
+
     public String getMensajeEncriptado() {
         return mensajeEncriptado;
     }

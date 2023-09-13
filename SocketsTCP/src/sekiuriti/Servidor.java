@@ -49,17 +49,7 @@ public class Servidor {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
+        } catch (NoSuchPaddingException | InvalidKeySpecException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException e) {
             throw new RuntimeException(e);
         } finally {
             if (serverSocket != null) {
@@ -95,8 +85,7 @@ public class Servidor {
                 Mensaje claveCliente = (Mensaje) in.readObject();
                 rsaCliente.setPublicKeyString(claveCliente.getExtra());
 
-                out.writeObject(new Mensaje("Ingresa nombre de usuario:"));
-                out.flush();
+
 
                 Mensaje nombreUsuario = (Mensaje) in.readObject();
                 username = nombreUsuario.getExtra();

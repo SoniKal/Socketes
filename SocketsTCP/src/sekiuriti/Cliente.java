@@ -39,8 +39,7 @@ public class Cliente {
             escritor.writeObject(new Mensaje(rsa.getPublicKeyString()));
             escritor.flush();
 
-            Mensaje nombreUsuario = (Mensaje) lector.readObject();
-            System.out.println("¡Bienvenido, " + nombreUsuario.getExtra() + "!");
+
 
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
@@ -61,9 +60,10 @@ public class Cliente {
                     String mensajeHasheado = hash.hashear(mensajeUsuario);
                     rsa.EncryptWithPrivate(mensajeUsuario);
                     String mensajeEncriptado = rsaServer.Encrypt(mensajeUsuario);
+                    boolean b = true;
 
-                    while ((mensajeUsuario = lectorConsola.readLine()) != null) {
-                        escritor.writeObject(new Mensaje(mensajeEncriptado, mensajeHasheado, nombreUsuario.getExtra()));
+                    while (b) {
+                        escritor.writeObject(new Mensaje(mensajeEncriptado, mensajeHasheado));
                         escritor.flush();
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                     }
