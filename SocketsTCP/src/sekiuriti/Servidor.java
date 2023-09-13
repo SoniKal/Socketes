@@ -10,7 +10,6 @@ import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +48,9 @@ public class Servidor {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (NoSuchPaddingException | InvalidKeySpecException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException e) {
+        } catch (NoSuchPaddingException | IllegalBlockSizeException |
+                 NoSuchAlgorithmException | BadPaddingException |
+                 InvalidKeySpecException | InvalidKeyException e) {
             throw new RuntimeException(e);
         } finally {
             if (serverSocket != null) {
@@ -66,11 +67,11 @@ public class Servidor {
         private Socket clientSocket;
         private ObjectOutputStream out;
         private ObjectInputStream in;
-        private String username;
         private Hash hash;
 
         public ClienteHandler(Socket socket) {
             clientSocket = socket;
+            rsaCliente = new RSA(); // Inicializar rsaCliente aquí
         }
 
         public void run() {
@@ -85,42 +86,26 @@ public class Servidor {
                 Mensaje claveCliente = (Mensaje) in.readObject();
                 rsaCliente.setPublicKeyString(claveCliente.getExtra());
 
-
-
-                Mensaje nombreUsuario = (Mensaje) in.readObject();
-                username = nombreUsuario.getExtra();
-
-                System.out.println("Nuevo usuario: " + username);
-
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
-                    if(rsa.Decrypt(mensaje.getMensajeEncriptado()) == hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado())))
-                    System.out.println("Mensaje recibido de " + username + ": " + mensaje.getExtra());
+                    if (rsa.Decrypt(mensaje.getMensajeEncriptado()) == hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado())))
+                        System.out.println("Mensaje recibido de un cliente.");
 
                     for (ClienteHandler cliente : Servidor.this.clientes) {
                         if (cliente != this) {
-                            cliente.enviarMensaje(new Mensaje(username + ": " + mensaje.getExtra()));
+                            cliente.enviarMensaje(new Mensaje("Mensaje del servidor."));
                         }
                     }
                 }
 
-                System.out.println("Usuario desconocido: " + username);
                 clientes.remove(this);
                 clientSocket.close();
 
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
-            } catch (NoSuchPaddingException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalBlockSizeException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            } catch (BadPaddingException e) {
-                throw new RuntimeException(e);
-            } catch (InvalidKeyException e) {
-                throw new RuntimeException(e);
-            } catch (InvalidKeySpecException e) {
+            } catch (NoSuchPaddingException | IllegalBlockSizeException |
+                     NoSuchAlgorithmException | BadPaddingException |
+                     InvalidKeySpecException | InvalidKeyException e) {
                 throw new RuntimeException(e);
             } finally {
                 try {

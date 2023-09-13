@@ -11,10 +11,6 @@ public class Mensaje implements Serializable {
         this.extra = nombre;
     }
 
-    public Mensaje(String nombre) {
-        this.extra = nombre;
-    }
-
     public Mensaje(String mensajeEncriptado, String mensajeHasheado) {
         this.mensajeEncriptado = mensajeEncriptado;
         this.mensajeHasheado = mensajeHasheado;
@@ -44,4 +40,3 @@ public class Mensaje implements Serializable {
         this.extra = extra;
     }
 }
-

@@ -11,19 +11,14 @@ import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Scanner;
 
 public class Cliente {
-    private static final long TIEMPO_ENTRE_MENSAJES = 3000;
-
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) {
         try {
-            Socket socket = new Socket("172.16.255.201", 6969);
+            Socket socket = new Socket("127.0.0.1", 6969);
             ObjectOutputStream escritor = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream lector = new ObjectInputStream(socket.getInputStream());
-            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
             RSA rsa = new RSA();
             RSA rsaServer = new RSA();
             Hash hash = new Hash();
@@ -36,11 +31,6 @@ public class Cliente {
             Mensaje claveServer = (Mensaje) lector.readObject();
             rsaServer.setPublicKeyString(claveServer.getExtra());
 
-            escritor.writeObject(new Mensaje(rsa.getPublicKeyString()));
-            escritor.flush();
-
-
-
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
                     Mensaje mensaje;
@@ -52,11 +42,11 @@ public class Cliente {
                 }
             });
             hiloRecibirMensajes.start();
-            Scanner scanner = new Scanner(System.in);
+            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
 
             Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
-                    String mensajeUsuario = scanner.nextLine();
+                    String mensajeUsuario = lectorConsola.readLine();
                     String mensajeHasheado = hash.hashear(mensajeUsuario);
                     rsa.EncryptWithPrivate(mensajeUsuario);
                     String mensajeEncriptado = rsaServer.Encrypt(mensajeUsuario);
@@ -65,10 +55,13 @@ public class Cliente {
                     while (b) {
                         escritor.writeObject(new Mensaje(mensajeEncriptado, mensajeHasheado));
                         escritor.flush();
-                        Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                     }
-                } catch (IOException | InterruptedException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException | NoSuchProviderException e) {
+                } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException |
+                         InvalidKeyException | IllegalBlockSizeException |
+                         BadPaddingException | InvalidKeySpecException e) {
                     e.printStackTrace();
+                } catch (NoSuchProviderException e) {
+                    throw new RuntimeException(e);
                 }
             });
             hiloEnviarMensajes.start();
@@ -80,9 +73,17 @@ public class Cliente {
             lector.close();
             lectorConsola.close();
             socket.close();
-        } catch (IOException | InterruptedException | ClassNotFoundException e) {
+        } catch (IOException | InterruptedException | ClassNotFoundException | NoSuchAlgorithmException |
+                 InvalidKeySpecException e) {
             e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
         }
     }
 }
-

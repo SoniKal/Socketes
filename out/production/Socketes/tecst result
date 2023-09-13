@@ -11,17 +11,17 @@ public class ClienteOrig {
             try {
                 String mensajeBase64;
                 while ((mensajeBase64 = lector.readLine()) != null) {
-                    // Convertir la cadena Base64 a un objeto Mensaje
-                    Mensaje mensaje = Mensaje.desdeBase64(mensajeBase64);
+                    // Convertir la cadena Base64 a un objeto ClienteServidor_Extra.Mensaje
+                    ClienteServidor_Extra.Mensaje mensaje = ClienteServidor_Extra.Mensaje.desdeBase64(mensajeBase64);
                     if (mensaje != null) {
                         // Verificar la firma del mensaje
                         if (mensaje.verificarFirma(clavePublicaServidor)) {
                             System.out.println(mensaje.getTexto());
                         } else {
-                            System.out.println("Mensaje no válido: firma incorrecta");
+                            System.out.println("ClienteServidor_Extra.Mensaje no válido: firma incorrecta");
                         }
                     } else {
-                        System.out.println("Mensaje no válido");
+                        System.out.println("ClienteServidor_Extra.Mensaje no válido");
                     }
                 }
             } catch (IOException e) {
@@ -36,7 +36,7 @@ public class ClienteOrig {
                 String mensajeUsuario;
                 while ((mensajeUsuario = lectorConsola.readLine()) != null) {
                     // Enviar el mensaje firmado al servidor
-                    Mensaje mensajeFirmado = new Mensaje(mensajeUsuario, keyPair.getPrivate());
+                    ClienteServidor_Extra.Mensaje mensajeFirmado = new ClienteServidor_Extra.Mensaje(mensajeUsuario, keyPair.getPrivate());
                     escritor.println(mensajeFirmado.aBase64());
                     Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                 }
@@ -73,7 +73,7 @@ public class ServidorOrig {
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) {
                     // Enviar el mensaje firmado a otros clientes
-                    Mensaje mensajeFirmado = new Mensaje(username + ": " + mensaje, keyPair.getPrivate());
+                    ClienteServidor_Extra.Mensaje mensajeFirmado = new ClienteServidor_Extra.Mensaje(username + ": " + mensaje, keyPair.getPrivate());
                     for (ClienteHandler cliente : ServidorOrig.this.clientes) {
                         if (cliente != this) {
                             cliente.enviarMensaje(mensajeFirmado.aBase64());
@@ -100,11 +100,11 @@ public class ServidorOrig {
 import java.security.*;
 import java.util.Base64;
 
-public class Mensaje {
+public class ClienteServidor_Extra.Mensaje {
     private String texto;
         private byte[] firma; // Firma digital del mensaje
 
-    public Mensaje(String texto, PrivateKey clavePrivada) {
+    public ClienteServidor_Extra.Mensaje(String texto, PrivateKey clavePrivada) {
         this.texto = texto;
         this.firma = firmarMensaje(texto, clavePrivada);
     }
@@ -150,16 +150,218 @@ public class Mensaje {
         return mensajeCodificado + ":" + firmaCodificada;
     }
 
-    // Convierte una cadena codificada en Base64 a un objeto Mensaje
-    public static Mensaje desdeBase64(String mensajeBase64) {
+    // Convierte una cadena codificada en Base64 a un objeto ClienteServidor_Extra.Mensaje
+    public static ClienteServidor_Extra.Mensaje desdeBase64(String mensajeBase64) {
         String[] partes = mensajeBase64.split(":");
         if (partes.length == 2) {
             String texto = new String(Base64.getDecoder().decode(partes[0]));
             byte[] firma = Base64.getDecoder().decode(partes[1]);
-            Mensaje mensaje = new Mensaje(texto, null);
+            ClienteServidor_Extra.Mensaje mensaje = new ClienteServidor_Extra.Mensaje(texto, null);
             mensaje.firma = firma;
             return mensaje;
         }
         return null;
     }
 }
+-------------------
+2
+------------------
+import java.io.*;
+import java.net.Socket;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+public class Cliente {
+    // ... (código previo)
+
+    public static void main(String[] args) {
+        // ... (código previo)
+
+        // Hilo que envía mensajes al servidor
+        Thread hiloEnviarMensajes = new Thread(() -> {
+            try {
+                String mensajeUsuario;
+                while ((mensajeUsuario = lectorConsola.readLine()) != null) {
+                    // Crear un mensaje con el texto y encriptarlo con la clave pública del servidor
+                    Mensaje mensajeEncriptado = new Mensaje(mensajeUsuario, clavePublicaServidor, clavePrivadaCliente);
+                    escritor.println(mensajeEncriptado.aBase64());
+                    Thread.sleep(TIEMPO_ENTRE_MENSAJES);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        hiloEnviarMensajes.start();
+
+        // ... (código posterior)
+    }
+}
+-----------------------------------------------------------------------------------------
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Servidor {
+    // ... (código previo)
+
+    private class ClienteHandler extends Thread {
+        // ... (código previo)
+
+        public void run() {
+            try {
+                // ... (código previo)
+
+                String mensajeBase64;
+                while ((mensajeBase64 = in.readLine()) != null) {
+                    // Convertir la cadena Base64 a un objeto Mensaje
+                    Mensaje mensaje = Mensaje.desdeBase64(mensajeBase64);
+                    if (mensaje != null) {
+                        // Verificar la firma del mensaje
+                        if (mensaje.verificarFirma(clavePublicaServidor)) {
+                            // Desencriptar el mensaje con la clave privada del servidor
+                            String mensajeDesencriptado = mensaje.desencriptarMensaje(clavePrivadaServidor);
+                            System.out.println(mensajeDesencriptado);
+                        } else {
+                            System.out.println("Mensaje no válido: firma incorrecta");
+                        }
+                    } else {
+                        System.out.println("Mensaje no válido");
+                    }
+                }
+
+                // ... (código posterior)
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                // ... (código posterior)
+            }
+        }
+
+        // ... (código posterior)
+    }
+}
+---------------------------------------------------------------------
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.MessageDigest;
+import java.util.Base64;
+
+public class Mensaje {
+    // ... (código previo)
+
+    // Constructor modificado para encriptar el mensaje
+    public Mensaje(String texto, PublicKey clavePublicaServidor, PrivateKey clavePrivadaCliente) {
+        this.texto = encriptarMensaje(texto, clavePublicaServidor);
+        this.firma = firmarMensaje(this.texto, clavePrivadaCliente);
+    }
+
+    // Métodos para encriptar y desencriptar mensajes
+    private String encriptarMensaje(String mensaje, PublicKey clavePublica) {
+        try {
+            Cipher cifrador = Cipher.getInstance("RSA");
+            cifrador.init(Cipher.ENCRYPT_MODE, clavePublica);
+            byte[] mensajeEncriptado = cifrador.doFinal(mensaje.getBytes());
+            return Base64.getEncoder().encodeToString(mensajeEncriptado);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String desencriptarMensaje(String mensajeEncriptado, PrivateKey clavePrivada) {
+        try {
+            byte[] mensajeBytes = Base64.getDecoder().decode(mensajeEncriptado);
+            Cipher cifrador = Cipher.getInstance("RSA");
+            cifrador.init(Cipher.DECRYPT_MODE, clavePrivada);
+            byte[] mensajeDesencriptadoBytes = cifrador.doFinal(mensajeBytes);
+            return new String(mensajeDesencriptadoBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ... (código posterior)
+}
+-------------------------------------------
+Claro, a continuación, explicaré en detalle las modificaciones realizadas en las clases Servidor, Cliente, y Mensaje, así como su funcionamiento dentro de la aplicación.
+Clase Mensaje
+
+La clase Mensaje se ha modificado para permitir la encriptación y desencriptación de mensajes utilizando RSA. Aquí está su funcionamiento detallado:
+
+    Constructor Modificado: El constructor ahora recibe la clave pública del servidor y la clave privada del cliente. Al crear una instancia de Mensaje, toma el texto del mensaje y encripta ese mensaje con la clave pública del servidor antes de firmarlo digitalmente con la clave privada del cliente. Esto garantiza que solo el servidor pueda desencriptar el mensaje.
+
+    Método de Encriptación: El método encriptarMensaje toma el mensaje y la clave pública del servidor y utiliza RSA para cifrar el mensaje. Luego, la salida se codifica en Base64 para que pueda ser transmitida de manera segura.
+
+    Método de Desencriptación: El método desencriptarMensaje toma un mensaje encriptado y la clave privada del servidor para desencriptarlo utilizando RSA y devolver el mensaje original.
+
+Clase Servidor
+
+La clase Servidor es responsable de gestionar las conexiones entrantes de los clientes y la comunicación segura. Aquí está su funcionamiento detallado:
+
+    Configuración del Servidor: El servidor se configura para escuchar en un puerto específico utilizando un ServerSocket. Cuando se inicia, entra en un bucle infinito esperando conexiones de clientes.
+
+    Conexiones Entrantes: Cuando un cliente se conecta al servidor, el servidor acepta la conexión y crea una instancia de ClienteHandler para manejar la comunicación con ese cliente. Cada ClienteHandler se ejecuta en su propio hilo separado.
+
+    Gestión de Mensajes: Dentro de cada ClienteHandler, se establecen flujos de entrada (in) y salida (out) para comunicarse con el cliente correspondiente. El servidor recibe mensajes encriptados y firmados digitalmente desde los clientes.
+
+    Desencriptación y Verificación: El servidor verifica la firma digital de los mensajes recibidos utilizando la clave pública del cliente. Si la firma es válida, el servidor desencripta el mensaje utilizando su clave privada antes de mostrarlo en la consola.
+
+Clase Cliente
+
+La clase Cliente es responsable de conectarse al servidor y participar en la comunicación segura. Aquí está su funcionamiento detallado:
+
+    Conexión al Servidor: El cliente se conecta al servidor utilizando un Socket. Se establecen flujos de entrada (lector) y salida (escritor) para comunicarse con el servidor.
+
+    Intercambio de Claves: El cliente genera su par de claves RSA (pública y privada) y envía su clave pública al servidor. Esto permitirá al servidor cifrar los mensajes que enviará al cliente.
+
+    Recepción de Nombre de Usuario: El cliente recibe el nombre de usuario asignado por el servidor y lo muestra en la consola.
+
+    Hilos de Comunicación: El cliente utiliza dos hilos separados para la comunicación. Un hilo (hiloRecibirMensajes) recibe mensajes encriptados y firmados digitalmente desde el servidor. El otro hilo (hiloEnviarMensajes) permite al cliente enviar mensajes al servidor.
+
+    Firma y Verificación de Mensajes: Cuando el cliente envía un mensaje al servidor, crea un objeto Mensaje con el texto del mensaje y lo encripta con la clave pública del servidor antes de firmarlo digitalmente con su clave privada. El servidor recibirá el mensaje encriptado, verificará la firma y lo desencriptará antes de mostrarlo en la consola.
+
+Con estas modificaciones, la aplicación permite la comunicación segura entre el servidor y los clientes. Los mensajes enviados están encriptados con la clave pública del servidor y solo el servidor puede desencriptarlos, garantizando la confidencialidad e integridad de la comunicación.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Generar pares de claves pública y privada en el servidor y el cliente.
+
+    Modifica la clase Servidor para que al inicio genere un par de claves RSA y comparta la clave pública con todos los clientes que se conecten.
+
+    Modifica la clase Cliente para que, al conectarse al servidor, solicite la clave pública del servidor.
+
+    Modifica el envío y la recepción de mensajes para cifrar y descifrar utilizando las claves.
+
+    Asegúrate de que ambas partes tengan acceso a las bibliotecas de Java para RSA. Por ejemplo, puedes usar java.security.KeyPairGenerator para generar claves RSA.

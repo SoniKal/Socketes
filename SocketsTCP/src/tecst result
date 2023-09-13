@@ -330,3 +330,38 @@ La clase Cliente es responsable de conectarse al servidor y participar en la com
     Firma y Verificación de Mensajes: Cuando el cliente envía un mensaje al servidor, crea un objeto Mensaje con el texto del mensaje y lo encripta con la clave pública del servidor antes de firmarlo digitalmente con su clave privada. El servidor recibirá el mensaje encriptado, verificará la firma y lo desencriptará antes de mostrarlo en la consola.
 
 Con estas modificaciones, la aplicación permite la comunicación segura entre el servidor y los clientes. Los mensajes enviados están encriptados con la clave pública del servidor y solo el servidor puede desencriptarlos, garantizando la confidencialidad e integridad de la comunicación.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Generar pares de claves pública y privada en el servidor y el cliente.
+
+    Modifica la clase Servidor para que al inicio genere un par de claves RSA y comparta la clave pública con todos los clientes que se conecten.
+
+    Modifica la clase Cliente para que, al conectarse al servidor, solicite la clave pública del servidor.
+
+    Modifica el envío y la recepción de mensajes para cifrar y descifrar utilizando las claves.
+
+    Asegúrate de que ambas partes tengan acceso a las bibliotecas de Java para RSA. Por ejemplo, puedes usar java.security.KeyPairGenerator para generar claves RSA.
