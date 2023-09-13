@@ -1,83 +1,78 @@
 package sekiuriti;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
 import java.util.Base64;
 
 public class Cliente {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000;
+    private static PublicKey servidorPublicKey;
+    private static PrivateKey clientePrivateKey;
 
     public static void main(String[] args) {
         try {
-            // Establece una conexión con el servidor donde está esa IP representada abajo
-            Socket socket = new Socket("172.16.255.201", 6969);
-            PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
+            Socket socket = new Socket("localhost", 6969);
+            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+            BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
-            // Genera un par de claves RSA para el cliente
+            // Obtener la clave pública del servidor
+            servidorPublicKey = (PublicKey) inputStream.readObject();
+
+            // Generar un par de claves RSA para el cliente
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             KeyPair keyPair = keyPairGenerator.generateKeyPair();
-            PublicKey publicKey = keyPair.getPublic();
+            clientePrivateKey = keyPair.getPrivate();
+            PublicKey clientePublicKey = keyPair.getPublic();
 
-            // Envía la clave pública al servidor
-            escritor.println(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+            // Enviar la clave pública del cliente al servidor
+            outputStream.writeObject(clientePublicKey);
 
-            // Recibe y muestra el nombre de usuario asignado
-            String nombreUsuario = lector.readLine();
+            // Recibir y mostrar el nombre de usuario asignado
+            String nombreUsuario = inputStream.readUTF();
             System.out.println("¡Bienvenido, " + nombreUsuario + "!");
 
             // Hilo que recibe mensajes del servidor
-            Thread hiloRecibirMensajes = new Thread(() -> {
+            Thread recibirMensajes = new Thread(() -> {
                 try {
-                    String mensajeTexto;
-                    while ((mensajeTexto = lector.readLine()) != null) {
-                        // Recibe el mensaje cifrado
-                        String firmaBase64 = lector.readLine();
-                        byte[] firmaBytes = Base64.getDecoder().decode(firmaBase64);
-
-                        // Verifica la firma antes de mostrar el mensaje
-                        if (Mensaje.verificarFirma(mensajeTexto, firmaBytes, publicKey)) {
-                            System.out.println(mensajeTexto);
+                    while (true) {
+                        Mensaje mensaje = (Mensaje) inputStream.readObject();
+                        if (mensaje.verificarFirma(servidorPublicKey)) {
+                            System.out.println(mensaje.getTexto());
                         } else {
-                            System.out.println("Mensaje no autenticado.");
+                            System.out.println("Mensaje no válido recibido.");
                         }
                     }
-                } catch (Exception e) {
+                } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
             });
-            hiloRecibirMensajes.start();
+            recibirMensajes.start();
 
             // Hilo que envía mensajes al servidor
-            Thread hiloEnviarMensajes = new Thread(() -> {
+            Thread enviarMensajes = new Thread(() -> {
                 try {
-                    String mensajeUsuario;
-                    while ((mensajeUsuario = lectorConsola.readLine()) != null) {
-                        // Cifra el mensaje antes de enviarlo
-                        Mensaje mensajeEncriptado = new Mensaje(mensajeUsuario, keyPair.getPrivate());
-                        escritor.println(mensajeEncriptado.getTexto());
-                        escritor.println(Base64.getEncoder().encodeToString(mensajeEncriptado.getFirma()));
+                    while (true) {
+                        String mensajeUsuario = consoleReader.readLine();
+                        Mensaje mensaje = new Mensaje(mensajeUsuario);
+                        mensaje.firmar(clientePrivateKey);
+                        outputStream.writeObject(mensaje);
+                        outputStream.flush();
                         Thread.sleep(TIEMPO_ENTRE_MENSAJES);
                     }
-                } catch (Exception e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             });
-            hiloEnviarMensajes.start();
+            enviarMensajes.start();
 
-            // Espera que ambos hilos terminen antes de cerrar los recursos
-            hiloRecibirMensajes.join();
-            hiloEnviarMensajes.join();
-
-            // Cierra los recursos utilizados
-            escritor.close();
-            lector.close();
-            lectorConsola.close();
-            socket.close();
-        } catch (IOException | InterruptedException | NoSuchAlgorithmException e) {
+        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }

@@ -180,7 +180,7 @@ public class Cliente {
 
 }
 
-reescribir ambas clases para que los mensajes esten encriptados de manera asimetrica con el metodo RSA
+reescribir ambas clases para que los mensajes esten encriptados de manera asimetrica con el metodo RSA recordando que es un sistema de difusion de mensajes por TCP
 para esto crear una nueva clase llamada "Mensaje" que cuente con el texto en forma de String y la firma digital
 utilizar solo librerias y metodos basicos
 modificar para que las PCs conectadas al servidor se envien entre si esta Clase "Mensaje"

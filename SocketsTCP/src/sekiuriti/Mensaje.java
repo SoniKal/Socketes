@@ -1,37 +1,52 @@
 package sekiuriti;
 
-import java.security.*;
+import java.io.Serializable;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.util.Base64;
 
-public class Mensaje {
+public class Mensaje implements Serializable {
     private String texto;
-    private byte[] firma;
+    private byte[] firma; // Firma digital del mensaje
 
-    public Mensaje(String texto, PrivateKey privateKey) throws Exception {
+    public Mensaje(String texto) {
         this.texto = texto;
-        this.firma = firmarTexto(texto, privateKey).getBytes();
     }
 
     public String getTexto() {
         return texto;
     }
 
-    public byte[] getFirma() {
-        return firma;
+    public void firmar(PrivateKey privateKey) {
+        try {
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+            signature.update(texto.getBytes());
+            firma = signature.sign();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public static String firmarTexto(String texto, PrivateKey privateKey) throws Exception {
-        Signature firma = Signature.getInstance("SHA256withRSA");
-        firma.initSign(privateKey);
-        firma.update(texto.getBytes());
-        byte[] firmaBytes = firma.sign();
-        return Base64.getEncoder().encodeToString(firmaBytes);
+    public boolean verificarFirma(PublicKey publicKey) {
+        try {
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initVerify(publicKey);
+            signature.update(texto.getBytes());
+            return signature.verify(firma);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    public static boolean verificarFirma(String texto, byte[] firmaBytes, PublicKey publicKey) throws Exception {
-        Signature firma = Signature.getInstance("SHA256withRSA");
-        firma.initVerify(publicKey);
-        firma.update(texto.getBytes());
-        return firma.verify(firmaBytes);
+    @Override
+    public String toString() {
+        return texto;
+    }
+
+    public String obtenerFirmaComoString() {
+        return Base64.getEncoder().encodeToString(firma);
     }
 }
