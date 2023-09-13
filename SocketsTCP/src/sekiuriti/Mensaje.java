@@ -3,14 +3,40 @@ package sekiuriti;
 import java.io.Serializable;
 
 public class Mensaje implements Serializable {
-    private String texto;
+    private String mensajeEncriptado, mensajeHasheado, extra;
 
-    public Mensaje(String texto) {
-        this.texto = texto;
+    public Mensaje(String mensajeEncriptado, String mensajeHasheado, String nombre) {
+        this.mensajeEncriptado = mensajeEncriptado;
+        this.mensajeHasheado = mensajeHasheado;
+        this.extra = nombre;
     }
 
-    public String getTexto() {
-        return texto;
+    public Mensaje(String nombre) {
+        this.extra = nombre;
+    }
+
+    public String getMensajeEncriptado() {
+        return mensajeEncriptado;
+    }
+
+    public void setMensajeEncriptado(String mensajeEncriptado) {
+        this.mensajeEncriptado = mensajeEncriptado;
+    }
+
+    public String getMensajeHasheado() {
+        return mensajeHasheado;
+    }
+
+    public void setMensajeHasheado(String mensajeHasheado) {
+        this.mensajeHasheado = mensajeHasheado;
+    }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
     }
 }
 
