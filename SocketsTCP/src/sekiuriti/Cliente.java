@@ -16,7 +16,7 @@ import java.security.spec.InvalidKeySpecException;
 public class Cliente {
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("127.0.0.1", 6969);
+            Socket socket = new Socket("172.16.255.201", 6969);
             ObjectOutputStream escritor = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream lector = new ObjectInputStream(socket.getInputStream());
             RSA rsa = new RSA();
@@ -50,9 +50,8 @@ public class Cliente {
                     String mensajeHasheado = hash.hashear(mensajeUsuario);
                     rsa.EncryptWithPrivate(mensajeUsuario);
                     String mensajeEncriptado = rsaServer.Encrypt(mensajeUsuario);
-                    boolean b = true;
 
-                    while (b) {
+                    while (lector.readObject() != null) {
                         escritor.writeObject(new Mensaje(mensajeEncriptado, mensajeHasheado));
                         escritor.flush();
                     }
@@ -61,6 +60,8 @@ public class Cliente {
                          BadPaddingException | InvalidKeySpecException e) {
                     e.printStackTrace();
                 } catch (NoSuchProviderException e) {
+                    throw new RuntimeException(e);
+                } catch (ClassNotFoundException e) {
                     throw new RuntimeException(e);
                 }
             });
