@@ -98,6 +98,7 @@ public class Servidor {
                         for (ClienteHandler cliente : Servidor.this.clientes) {
                             if (cliente != this) {
                                 cliente.enviarMensaje(new Mensaje("Mensaje del servidor."));
+
                             }
                         }
                     }
