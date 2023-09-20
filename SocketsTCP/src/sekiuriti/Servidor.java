@@ -100,7 +100,6 @@ public class Servidor {
                         for (ClienteHandler cliente : Servidor.this.clientes) {
                             if (cliente != this) {
                                 cliente.enviarMensaje(extra3);
-
                             }
                         }
                     }
@@ -131,8 +130,8 @@ public class Servidor {
 
         public void enviarMensaje(String mensaje) {
             try {
-                PrintWriter printWriter = new PrintWriter(clientSocket.getOutputStream(), true);
-                printWriter.println(mensaje);
+                out.writeObject(mensaje);
+                out.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }

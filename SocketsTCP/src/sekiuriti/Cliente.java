@@ -37,11 +37,13 @@ public class Cliente {
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
                     String mensaje;
-                    while ((mensaje = lector.readLine()) != null) {
+                    while ((mensaje = (String) lector.readObject()) != null) {
                         System.out.println(mensaje);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
                 }
             });
             hiloRecibirMensajes.start();
