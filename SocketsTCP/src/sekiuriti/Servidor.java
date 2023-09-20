@@ -91,7 +91,7 @@ public class Servidor {
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
-                    String extra1, extra2, extra3, extra4, extra5;
+                    String extra1, extra2, extra3;
                     extra1 = rsa.Decrypt(mensaje.getMensajeEncriptado());
                     extra2 = hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado()));
                     if (extra1 == extra2){
