@@ -78,9 +78,10 @@ public class Servidor {
                     }
                 }
 
-                System.out.println("usuario desconectado: " + username);
+                System.out.println("Usuario desconocido: " + username);
                 clientes.remove(this);
                 clientSockete.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {

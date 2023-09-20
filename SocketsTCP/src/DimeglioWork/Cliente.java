@@ -1,37 +1,35 @@
 package DimeglioWork;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.BufferedReader;//lee datos que entran
+import java.io.IOException;//excepcion de errores
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.PrintWriter;//escribe datos de salida
 import java.net.Socket;
 
 public class Cliente {
     private static final long TIEMPO_ENTRE_MENSAJES = 3000; // 3 segundos de espera para evitar spam
 
+
+    // ANTES DE EJECUTAR: EL SERVIDOR DEBE ESTAR ABIERTO //
+
     public static void main(String[] args) {
         try {
-            // establece una conexión con el servidor
-            Socket socket = new Socket("172.16.255.221", 6969);
+            // establece una conexión con el servidor donde está esa IP representada abajo
+            Socket socket = new Socket("172.16.255.201", 6969);
             PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
 
-            // recibir y mostrar el nombre de usuario asignado
+            // recibe y muestra el nombre de usuario asignado
             String nombreUsuario = lector.readLine();
             System.out.println("¡Bienvenido, " + nombreUsuario + "!");
 
-            // hilo para recibir mensajes del servidor
+            // hilo que recibe mensajes del servidor
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
                     String mensaje;
                     while ((mensaje = lector.readLine()) != null) {
-                        // verifica si el mensaje es la solicitud del nombre de usuario
-                        if (mensaje.equals("Ingresa tu nombre de usuario:")) {
-                            System.out.println(mensaje);
-                        } else {
-                            System.out.println(mensaje); // Mostrar el mensaje directamente
-                        }
+                        System.out.println(mensaje);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -39,14 +37,13 @@ public class Cliente {
             });
             hiloRecibirMensajes.start();
 
-            // hilo para enviar mensajes al servidor
+            // hilo qye envia mensajes al servidor
             Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
                     String mensajeUsuario;
                     while ((mensajeUsuario = lectorConsola.readLine()) != null) {
-                        // agregar el nombre de usuario al mensaje antes de enviarlo
-                        escritor.println("[" + nombreUsuario + "]: " + mensajeUsuario);
-                        Thread.sleep(TIEMPO_ENTRE_MENSAJES); // Esperar para evitar enviar mensajes muy rápido
+                        escritor.println(mensajeUsuario);
+                        Thread.sleep(TIEMPO_ENTRE_MENSAJES); // espera de mensajes (para que no se envien rapido)
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
@@ -54,11 +51,11 @@ public class Cliente {
             });
             hiloEnviarMensajes.start();
 
-            // esperar a que ambos hilos terminen antes de cerrar los recursos
+            // espera que ambos hilos terminen antes de cerrar los recursos
             hiloRecibirMensajes.join();
             hiloEnviarMensajes.join();
 
-            // cerrar los recursos utilizados
+            // cierra los recursos utilizados
             escritor.close();
             lector.close();
             lectorConsola.close();
