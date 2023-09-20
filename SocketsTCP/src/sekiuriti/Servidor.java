@@ -45,6 +45,9 @@ public class Servidor {
 
                 ClienteHandler clienteHandler = new ClienteHandler(clientSocket);
                 clientes.add(clienteHandler);
+                System.out.println(clienteHandler);
+                System.out.println(clienteHandler.getId());
+                System.out.println(clienteHandler.getStackTrace());
                 clienteHandler.start();
             }
         } catch (IOException e) {
@@ -87,10 +90,10 @@ public class Servidor {
                 Mensaje claveCliente = (Mensaje) in.readObject();
                 rsaCliente.setPublicKeyString(claveCliente.getExtra()); // recibe publica servidor
 
-                clientesTotales.put(rsaCliente.getPublicKey(), ClienteHandler.this);
+                clientesTotales.put(rsaCliente.PublicKey, ClienteHandler.this);
 
                 Mensaje mensaje;
-                while ((mensaje = (Mensaje) in.readObject()) != null) {
+                mensaje = (Mensaje) in.readObject();
                     String extra1, extra2, extra3;
                     extra1 = rsa.Decrypt(mensaje.getMensajeEncriptado());
                     extra2 = hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado()));
@@ -103,7 +106,7 @@ public class Servidor {
                             }
                         }
                     }
-                }
+
 
                 clientes.remove(this);
                 clientSocket.close();

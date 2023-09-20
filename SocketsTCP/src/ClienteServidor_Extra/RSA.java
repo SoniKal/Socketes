@@ -35,6 +35,8 @@ public class RSA {
 
     public RSA()
     {
+
+
     }
 
     public void setPrivateKeyString(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
@@ -124,6 +126,7 @@ public class RSA {
         return new String(decryptedBytes);
     }
 
+
     public String bytesToString(byte[] b) {
         byte[] b2 = new byte[b.length + 1];
         b2[0] = 1;
@@ -157,10 +160,9 @@ public class RSA {
         }
     }
 
-    public java.security.PublicKey openFromDiskPublicKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public void openFromDiskPublicKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         String content = this.readFileAsString(path);
         this.setPublicKeyString(content);
-        return null;
     }
 
     public void openFromDiskPrivateKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
@@ -183,19 +185,6 @@ public class RSA {
         return fileData.toString();
     }
 
-    public java.security.PrivateKey getPrivateKey() {
-        return PrivateKey;
-    }
 
-    public void setPrivateKey(java.security.PrivateKey privateKey) {
-        PrivateKey = privateKey;
-    }
 
-    public java.security.PublicKey getPublicKey() {
-        return PublicKey;
-    }
-
-    public void setPublicKey(java.security.PublicKey publicKey) {
-        PublicKey = publicKey;
-    }
 }
