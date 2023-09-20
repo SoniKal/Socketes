@@ -10,8 +10,10 @@ import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Servidor {
@@ -19,6 +21,7 @@ public class Servidor {
     private static List<ClienteHandler> clientes;
     private RSA rsa;
     private RSA rsaCliente;
+    private HashMap<PublicKey, ClienteHandler>clientesTotales = new HashMap<>();
 
     public static void main(String[] args) {
         Servidor servidor = new Servidor();
@@ -31,10 +34,6 @@ public class Servidor {
             System.out.println("Servidor iniciado. Esperando conexiones...");
             rsa = new RSA();
             rsa.genKeyPair(512);
-            rsa.saveToDiskPrivateKey("/tmp/rsa.priServer");
-            rsa.saveToDiskPublicKey("/tmp/rsa.pubServer");
-            rsa.openFromDiskPrivateKey("/tmp/rsa.priServer");
-            rsa.openFromDiskPublicKey("/tmp/rsa.pubServer");
 
             clientes = new ArrayList<>();
 
@@ -50,7 +49,7 @@ public class Servidor {
             e.printStackTrace();
         } catch (NoSuchPaddingException | IllegalBlockSizeException |
                  NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeySpecException | InvalidKeyException e) {
+                 InvalidKeyException e) {
             throw new RuntimeException(e);
         } finally {
             if (serverSocket != null) {
@@ -80,20 +79,26 @@ public class Servidor {
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 hash = new Hash();
 
-                out.writeObject(new Mensaje(rsa.getPublicKeyString()));
+                out.writeObject(new Mensaje(rsa.getPublicKeyString())); //server envia su publica
                 out.flush();
 
                 Mensaje claveCliente = (Mensaje) in.readObject();
-                rsaCliente.setPublicKeyString(claveCliente.getExtra());
+                rsaCliente.setPublicKeyString(claveCliente.getExtra()); // recibe publica servidor
+
+                clientesTotales.put(rsaCliente.getPublicKey(), ClienteHandler.this);
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
-                    if (rsa.Decrypt(mensaje.getMensajeEncriptado()) == hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado())))
+                    String extra1, extra2;
+                    extra1 = rsa.Decrypt(mensaje.getMensajeEncriptado());
+                    extra2 = hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado()));
+                    if (extra1 == extra2){
                         System.out.println("Mensaje recibido de un cliente.");
 
-                    for (ClienteHandler cliente : Servidor.this.clientes) {
-                        if (cliente != this) {
-                            cliente.enviarMensaje(new Mensaje("Mensaje del servidor."));
+                        for (ClienteHandler cliente : Servidor.this.clientes) {
+                            if (cliente != this) {
+                                cliente.enviarMensaje(new Mensaje("Mensaje del servidor."));
+                            }
                         }
                     }
                 }

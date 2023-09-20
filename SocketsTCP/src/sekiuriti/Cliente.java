@@ -14,22 +14,25 @@ import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 
 public class Cliente {
+    private static RSA rsa;
+    private static RSA rsaServer;
+    private static Hash hash;
+
     public static void main(String[] args) {
         try {
             Socket socket = new Socket("172.16.255.201", 6969);
             ObjectOutputStream escritor = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream lector = new ObjectInputStream(socket.getInputStream());
-            RSA rsa = new RSA();
-            RSA rsaServer = new RSA();
-            Hash hash = new Hash();
+            rsa = new RSA();
+            rsaServer = new RSA();
+            hash = new Hash();
             rsa.genKeyPair(512);
-            rsa.saveToDiskPrivateKey("/tmp/rsa.priCliente");
-            rsa.saveToDiskPublicKey("/tmp/rsa.pubCliente");
-            rsa.openFromDiskPrivateKey("/tmp/rsa.priCliente");
-            rsa.openFromDiskPublicKey("/tmp/rsa.pubCliente");
 
-            Mensaje claveServer = (Mensaje) lector.readObject();
+            Mensaje claveServer = (Mensaje) lector.readObject(); // recibe publica servidor
             rsaServer.setPublicKeyString(claveServer.getExtra());
+
+            escritor.writeObject(new Mensaje(rsa.getPublicKeyString())); //cliente envia su publica
+            escritor.flush();
 
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
@@ -86,5 +89,29 @@ public class Cliente {
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public RSA getRsa() {
+        return rsa;
+    }
+
+    public void setRsa(RSA rsa) {
+        this.rsa = rsa;
+    }
+
+    public RSA getRsaServer() {
+        return rsaServer;
+    }
+
+    public void setRsaServer(RSA rsaServer) {
+        this.rsaServer = rsaServer;
+    }
+
+    public Hash getHash() {
+        return hash;
+    }
+
+    public void setHash(Hash hash) {
+        this.hash = hash;
     }
 }
