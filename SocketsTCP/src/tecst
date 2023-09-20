@@ -182,19 +182,18 @@ public class Cliente {
 
 recordando que esto se trata de un sistema de difusion por TCP
 reescribir las clases para que cumplan con lo siguiente:
-
 al iniciar el server este generara para si mismo una clave privada y publica
-al iniciar el cliente este generara una clave privada y publica
+al iniciar el cliente este generara para si mismo una clave privada y publica
 cuando el cliente se conecte al server, automaticamente recibiran la clave publica del otro (el cliente la del server y el server la del cliente) y las guardaran
-
 cuando el emisor envia un mensaje lo hara usando byte64
-este mensaje sera una nueva clase que cuenta con
 
+este mensaje sera una nueva clase que cuenta con:
 un mensaje encriptado con la clave publica del receptor
 una firma que sera el texto hasheado y encriptado con la clave privada del emisor
-
 el receptor recibira este mensaje y desencriptara las partes usando los datos necesarios
-
 comprobara que la firma sea correcta y si es asi mostrara el mensaje por termina, solo el cliente lo mostrara
 
-añadir comentarios ocasionales
+añadir comentarios ocasionales en el codigo
+remover la funcion de COOLDOWN
+tratar de modificar lo menos posible los codigos originales
+implementar todos estos cambios
