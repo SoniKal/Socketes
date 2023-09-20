@@ -10,11 +10,13 @@ import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Servidor {
     private ServerSocket serverSocket;
@@ -89,15 +91,15 @@ public class Servidor {
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
-                    String extra1, extra2;
+                    String extra1, extra2, extra3, extra4, extra5;
                     extra1 = rsa.Decrypt(mensaje.getMensajeEncriptado());
                     extra2 = hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado()));
                     if (extra1 == extra2){
                         System.out.println("Mensaje recibido de un cliente.");
-
+                        extra3 = rsaCliente.Decrypt(mensaje.getMensajeHasheado());
                         for (ClienteHandler cliente : Servidor.this.clientes) {
                             if (cliente != this) {
-                                cliente.enviarMensaje(new Mensaje("Mensaje del servidor."));
+                                cliente.enviarMensaje(extra3);
 
                             }
                         }
@@ -127,10 +129,10 @@ public class Servidor {
             }
         }
 
-        public void enviarMensaje(Mensaje mensaje) {
+        public void enviarMensaje(String mensaje) {
             try {
-                out.writeObject(mensaje);
-                out.flush();
+                PrintWriter printWriter = new PrintWriter(clientSocket.getOutputStream(), true);
+                printWriter.println(mensaje);
             } catch (IOException e) {
                 e.printStackTrace();
             }

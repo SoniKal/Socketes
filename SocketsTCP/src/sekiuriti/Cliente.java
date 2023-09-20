@@ -36,11 +36,11 @@ public class Cliente {
 
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
-                    Mensaje mensaje;
-                    while ((mensaje = (Mensaje) lector.readObject()) != null) {
-                        System.out.println(mensaje.getExtra());
+                    String mensaje;
+                    while ((mensaje = lector.readLine()) != null) {
+                        System.out.println(mensaje);
                     }
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
@@ -89,29 +89,5 @@ public class Cliente {
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public RSA getRsa() {
-        return rsa;
-    }
-
-    public void setRsa(RSA rsa) {
-        this.rsa = rsa;
-    }
-
-    public RSA getRsaServer() {
-        return rsaServer;
-    }
-
-    public void setRsaServer(RSA rsaServer) {
-        this.rsaServer = rsaServer;
-    }
-
-    public Hash getHash() {
-        return hash;
-    }
-
-    public void setHash(Hash hash) {
-        this.hash = hash;
     }
 }
