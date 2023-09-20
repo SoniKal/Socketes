@@ -23,8 +23,8 @@ public class Hash {
                 }
                 hexString.append(hex);
             }
-
             return hexString.toString();
+
         } catch (Exception e) {
             // excepciones en caso de errores
             e.printStackTrace();

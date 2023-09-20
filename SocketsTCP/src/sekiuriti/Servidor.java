@@ -10,20 +10,17 @@ import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+
 
 public class Servidor {
     private ServerSocket serverSocket;
     private static List<ClienteHandler> clientes;
     private RSA rsa;
     private RSA rsaCliente;
-    private HashMap<PublicKey, ClienteHandler>clientesTotales = new HashMap<>();
 
     public static void main(String[] args) {
         Servidor servidor = new Servidor();
@@ -35,8 +32,7 @@ public class Servidor {
             serverSocket = new ServerSocket(6969);
             System.out.println("Servidor iniciado. Esperando conexiones...");
             rsa = new RSA();
-            rsa.genKeyPair(512);
-
+            rsa.genKeyPair(2048);
             clientes = new ArrayList<>();
 
             while (true) {
@@ -50,6 +46,7 @@ public class Servidor {
                 System.out.println(clienteHandler.getStackTrace());
                 clienteHandler.start();
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException | IllegalBlockSizeException |
@@ -88,28 +85,28 @@ public class Servidor {
                 out.flush();
 
                 Mensaje claveCliente = (Mensaje) in.readObject();
+
                 rsaCliente.setPublicKeyString(claveCliente.getExtra()); // recibe publica servidor
 
-                clientesTotales.put(rsaCliente.PublicKey, ClienteHandler.this);
-
                 Mensaje mensaje;
-                mensaje = (Mensaje) in.readObject();
+                while((mensaje = (Mensaje) in.readObject() )!= null){
+
                     String extra1, extra2, extra3;
-                    extra1 = rsa.Decrypt(mensaje.getMensajeEncriptado());
-                    extra2 = hash.hashear(rsaCliente.Decrypt(mensaje.getMensajeHasheado()));
-                    if (extra1 == extra2){
+
+                    extra1 = rsaCliente.DecryptWithPublic(mensaje.getMensajeHasheado());
+                    extra2 = hash.hashear(rsa.Decrypt(mensaje.getMensajeEncriptado()));
+
+                    if (extra1.equals(extra2) ){
                         System.out.println("Mensaje recibido de un cliente.");
-                        extra3 = rsaCliente.Decrypt(mensaje.getMensajeHasheado());
+                        extra3 = rsa.Decrypt(mensaje.getMensajeEncriptado());
                         for (ClienteHandler cliente : Servidor.this.clientes) {
                             if (cliente != this) {
                                 cliente.enviarMensaje(extra3);
                             }
                         }
                     }
+                }
 
-
-                clientes.remove(this);
-                clientSocket.close();
 
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();

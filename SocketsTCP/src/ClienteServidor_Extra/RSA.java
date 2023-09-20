@@ -30,8 +30,8 @@ import javax.crypto.NoSuchPaddingException;
 
 public class RSA {
 
-    public PrivateKey PrivateKey = null;
-    public PublicKey PublicKey = null;
+    public static PrivateKey PrivateKey = null;
+    public static PublicKey PublicKey = null;
 
     public RSA()
     {
@@ -121,7 +121,7 @@ public class RSA {
         byte[] decryptedBytes;
 
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, this.PublicKey);
+        cipher.init(Cipher.DECRYPT_MODE, PublicKey);
         decryptedBytes = cipher.doFinal(stringToBytes(result));
         return new String(decryptedBytes);
     }

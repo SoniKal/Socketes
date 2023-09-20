@@ -53,7 +53,7 @@ public class Cliente {
                     Scanner scanner = new Scanner(System.in);
                     String mensajeUsuario = scanner.nextLine();
                     String mensajeHasheado = hash.hashear(mensajeUsuario);
-                    rsa.EncryptWithPrivate(mensajeUsuario);
+                    rsa.EncryptWithPrivate(mensajeHasheado);
                     String mensajeEncriptado = rsaServer.Encrypt(mensajeUsuario);
                     escritor.writeObject(new Mensaje(mensajeEncriptado, mensajeHasheado));
                     escritor.flush();
