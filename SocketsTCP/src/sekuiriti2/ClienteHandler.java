@@ -51,5 +51,53 @@ public class ClienteHandler extends Thread {
         out.println(clavePublica);
     }
 
-    // Resto del código sin cambios
+    public void run() {
+        try {
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            out.println("Ingresa nombre de usuario:");
+            username = in.readLine();
+            System.out.println("Nuevo usuario: " + username);
+
+            String mensaje;
+            while ((mensaje = in.readLine()) != null) {
+                System.out.println("Mensaje recibido de " + username + ": " + mensaje);
+
+                // Difunde el mensaje que el cliente envió hacia los demás, excepto a sí mismo
+                for (ClienteHandler cliente : Servidor.clientes) {
+                    if (cliente != this) {
+                        // Encriptar el mensaje con la clave pública del receptor y firmarlo con la clave privada del emisor
+                        byte[] mensajeEncriptadoBytes = GeneradorClaves.encriptarConClavePublica(username + ": " + mensaje, cliente.clavePublicaCliente);
+                        String mensajeEncriptado = Base64.getEncoder().encodeToString(mensajeEncriptadoBytes);
+                        String firma = GeneradorClaves.firmarMensaje(mensajeEncriptado, clavePrivada);
+
+                        Mensaje mensajeSeguro = new Mensaje(mensajeEncriptado, firma);
+                        cliente.enviarMensaje(mensajeSeguro);
+                    }
+                }
+            }
+
+            System.out.println("Usuario desconocido: " + username);
+            Servidor.clientes.remove(this);
+            clientSocket.close();
+
+        } catch (IOException | GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
+

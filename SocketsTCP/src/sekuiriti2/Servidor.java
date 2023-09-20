@@ -7,7 +7,7 @@ import java.util.*;
 
 public class Servidor {
     private ServerSocket serverSocket;
-    private static List<ClienteHandler> clientes;
+    static List<ClienteHandler> clientes;
 
     public static void main(String[] args) {
         Servidor servidor = new Servidor();
