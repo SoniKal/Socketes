@@ -18,6 +18,20 @@ public class Cliente {
 
             System.out.println("Conectado al servidor. Escribe un mensaje o 'salir' para desconectarte.");
 
+            // Hilo para recibir y mostrar mensajes del servidor
+            Thread recibirMensajes = new Thread(() -> {
+                try {
+                    String mensajeRecibido;
+                    while ((mensajeRecibido = in.readLine()) != null) {
+                        System.out.println(mensajeRecibido);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            recibirMensajes.start();
+
+            // Hilo principal para enviar mensajes al servidor
             String userInput;
             while ((userInput = stdin.readLine()) != null) {
                 out.println(userInput);
@@ -27,7 +41,6 @@ public class Cliente {
             }
 
             out.close();
-            in.close();
             stdin.close();
             socket.close();
         } catch (IOException e) {
@@ -35,4 +48,5 @@ public class Cliente {
         }
     }
 }
+
 
