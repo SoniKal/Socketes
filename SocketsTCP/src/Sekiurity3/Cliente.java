@@ -36,6 +36,10 @@ public class Cliente {
             // Recibir clave pública del servidor
             servidorPublicKey = (PublicKey) in.readObject();
 
+            // Enviar la clave pública del cliente al servidor
+            out.writeObject(clienteKeyPair.getPublic());
+            out.flush();
+
             Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
                     Scanner scanner = new Scanner(System.in);

@@ -1,16 +1,19 @@
 package Sekiurity3;
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 public class Servidor {
     private ServerSocket serverSocket;
@@ -55,18 +58,16 @@ public class Servidor {
 
     private class ClienteHandler extends Thread {
         private Socket clientSocket;
-        private KeyPair clienteKeyPair; // Se agrega el par de claves para el cliente
+        private KeyPair clienteKeyPair;
         private ObjectOutputStream out;
         private ObjectInputStream in;
         private Hash hash;
 
-        public ClienteHandler(Socket socket, KeyPair ClienteKeyPair) {
+        public ClienteHandler(Socket socket, KeyPair servidorKeyPair) {
             clientSocket = socket;
-            clienteKeyPair = generateKeyPair(); // Generar par de claves para el cliente
-            this.clienteKeyPair = ClienteKeyPair;
+            clienteKeyPair = generateKeyPair();
         }
 
-        // Generar un par de claves RSA para el cliente
         private KeyPair generateKeyPair() {
             try {
                 KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -83,34 +84,25 @@ public class Servidor {
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 hash = new Hash();
 
-                // Enviar clave pública del servidor al cliente
-                out.writeObject(servidorKeyPair.getPublic());
-                out.flush();
-
-                // Recibir y almacenar la clave pública del cliente
+                // Recibir clave pública del cliente
                 PublicKey clientePublicKey = (PublicKey) in.readObject();
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
                     String mensajeEncriptado = mensaje.getMensajeEncriptado();
                     String firmaEncriptada = mensaje.getFirma();
+                    PublicKey emisorPublicKey = clientePublicKey;
 
-                    // Desencriptar el mensaje con la clave privada del servidor
-                    String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, servidorKeyPair.getPrivate());
-
-                    // Desencriptar la firma con la clave pública del cliente
-                    String firmaDesencriptada = DecryptWithPublic(firmaEncriptada, clientePublicKey);
-
-                    // Calcular el hash del mensaje original
+                    String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, clienteKeyPair.getPrivate());
+                    String firmaDesencriptada = DecryptWithPublic(firmaEncriptada, emisorPublicKey);
                     String mensajeHasheado = hash.hashear(mensajeDesencriptado);
 
-                    // Verificar la firma
                     if (firmaDesencriptada.equals(mensajeHasheado)) {
                         System.out.println("Mensaje recibido de un cliente: " + mensajeDesencriptado);
                     }
                 }
 
-            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException |
+            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
                      NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
             } finally {
@@ -130,37 +122,25 @@ public class Servidor {
             }
         }
 
-        // Métodos de encriptación
-        // ...
+        // Resto del código...
+    }
 
-        // Método para encriptar utilizando una clave pública
-        private String EncryptWithPublic(String mensaje, PublicKey publicKey)
+        private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey)
                 throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-                IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
-                UnsupportedEncodingException {
+                IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(encryptedBytes);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(mensajeEncriptado));
+            return new String(decryptedBytes, "UTF-8");
         }
 
-        // Método para encriptar utilizando una clave privada
-        private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
+        private String DecryptWithPublic(String firmaEncriptada, PublicKey publicKey)
                 throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-                IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
-                UnsupportedEncodingException {
+                IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(encryptedBytes);
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
+            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(firmaEncriptada));
+            return new String(decryptedBytes, "UTF-8");
         }
     }
-}
-
-
-
-
-
-
-
 

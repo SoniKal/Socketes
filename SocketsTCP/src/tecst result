@@ -1,21 +1,120 @@
-ChatGPT
+teniendo en cuenta estos codigos:
 
-Aquí tienes las clases modificadas para implementar la funcionalidad de cifrado y firma digital en el sistema de difusión por TCP. He añadido comentarios para explicar el funcionamiento de las modificaciones:
+Cliente:
 
-java
+package Sekiurity3;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
+import java.util.Scanner;
+import javax.crypto.Cipher;
+
+public class Cliente {
+    private Socket socket;
+    private KeyPair clienteKeyPair;
+    private PublicKey servidorPublicKey;
+
+    public static void main(String[] args) {
+        Cliente cliente = new Cliente();
+        cliente.iniciar();
+    }
+
+    public void iniciar() {
+        try {
+            socket = new Socket("localhost", 6969);
+            System.out.println("Conectado al servidor.");
+
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            clienteKeyPair = keyPairGenerator.generateKeyPair();
+
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+            // Recibir clave pública del servidor
+            servidorPublicKey = (PublicKey) in.readObject();
+
+            Thread hiloEnviarMensajes = new Thread(() -> {
+                try {
+                    Scanner scanner = new Scanner(System.in);
+                    while (true) {
+                        String mensajeUsuario = scanner.nextLine();
+                        String mensajeHasheado = Hash.hashear(mensajeUsuario);
+
+                        // Encriptar mensaje con la clave pública del servidor
+                        String mensajeEncriptado = EncryptWithPublic(mensajeUsuario, servidorPublicKey);
+
+                        // Firmar el mensaje y encriptar con la clave privada del cliente
+                        String firma = EncryptWithPrivate(mensajeHasheado, clienteKeyPair.getPrivate());
+
+                        Mensaje mensaje = new Mensaje(mensajeEncriptado, firma);
+                        out.writeObject(mensaje);
+                        out.flush();
+                    }
+                } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException |
+                         InvalidKeyException | IllegalBlockSizeException |
+                         BadPaddingException | InvalidKeySpecException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            hiloEnviarMensajes.start();
+
+        } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Métodos de encriptación
+    // ...
+
+    // Método para encriptar utilizando una clave pública
+    private String EncryptWithPublic(String mensaje, PublicKey publicKey)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+            UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    // Método para encriptar utilizando una clave privada
+    private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+            UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+}
+
+Servidor:
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class Servidor {
     private ServerSocket serverSocket;
     private static List<ClienteHandler> clientes;
-    private KeyPair servidorKeyPair; // Claves pública y privada del servidor
+    private KeyPair servidorKeyPair;
 
     public static void main(String[] args) {
         Servidor servidor = new Servidor();
@@ -26,20 +125,21 @@ public class Servidor {
         try {
             serverSocket = new ServerSocket(6969);
             System.out.println("Servidor iniciado. Esperando conexiones...");
-
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            servidorKeyPair = keyPairGenerator.generateKeyPair();
             clientes = new ArrayList<>();
-            // Generar claves públicas y privadas para el servidor
-            servidorKeyPair = generarClaves();
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Nueva conexión aceptada");
 
-                ClienteHandler clienteHandler = new ClienteHandler(clientSocket, servidorKeyPair.getPublic());
+                ClienteHandler clienteHandler = new ClienteHandler(clientSocket, servidorKeyPair);
                 clientes.add(clienteHandler);
                 clienteHandler.start();
             }
-        } catch (IOException e) {
+
+        } catch (IOException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         } finally {
             if (serverSocket != null) {
@@ -52,185 +152,358 @@ public class Servidor {
         }
     }
 
-    private KeyPair generarClaves() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-        return keyPairGenerator.generateKeyPair();
-    }
-
     private class ClienteHandler extends Thread {
         private Socket clientSocket;
-        private PublicKey clientePublicKey;
-        private PrivateKey servidorPrivateKey;
-        // Agregar variables para las claves pública y privada del cliente
+        private KeyPair clienteKeyPair;
+        private ObjectOutputStream out;
+        private ObjectInputStream in;
+        private Hash hash;
 
-        public ClienteHandler(Socket socket, PublicKey servidorPublicKey) {
+        public ClienteHandler(Socket socket, KeyPair servidorKeyPair) {
             clientSocket = socket;
-            clientePublicKey = servidorPublicKey;
-            // Generar claves pública y privada para el cliente
-            // Asignar las claves generadas a las variables correspondientes
+            clienteKeyPair = generateKeyPair();
+        }
+
+        private KeyPair generateKeyPair() {
+            try {
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+                keyPairGenerator.initialize(2048);
+                return keyPairGenerator.generateKeyPair();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public void run() {
             try {
-                // Configurar flujos de entrada y salida
-                ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-                ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                out = new ObjectOutputStream(clientSocket.getOutputStream());
+                in = new ObjectInputStream(clientSocket.getInputStream());
+                hash = new Hash();
 
-                // Enviar clave pública del servidor al cliente
                 out.writeObject(servidorKeyPair.getPublic());
+                out.flush();
 
-                // Recibir clave pública del cliente
                 PublicKey clientePublicKey = (PublicKey) in.readObject();
 
-                // Procesar mensajes cifrados y firmados
-                while (true) {
-                    // Recibir mensaje cifrado y firmado
-                    byte[] mensajeCifrado = (byte[]) in.readObject();
-                    byte[] firma = (byte[]) in.readObject();
+                Mensaje mensaje;
+                while ((mensaje = (Mensaje) in.readObject()) != null) {
+                    String mensajeEncriptado = mensaje.getMensajeEncriptado();
+                    String firmaEncriptada = mensaje.getFirma();
+                    PublicKey emisorPublicKey = mensaje.getPublicKey();
 
-                    // Descifrar el mensaje usando la clave privada del servidor
-                    Cipher decCipher = Cipher.getInstance("RSA");
-                    decCipher.init(Cipher.DECRYPT_MODE, servidorKeyPair.getPrivate());
-                    byte[] mensajeDesencriptado = decCipher.doFinal(mensajeCifrado);
+                    String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, clienteKeyPair.getPrivate());
+                    String firmaDesencriptada = DecryptWithPublic(firmaEncriptada, emisorPublicKey);
+                    String mensajeHasheado = hash.hashear(mensajeDesencriptado);
 
-                    // Verificar la firma con la clave pública del cliente
-                    Signature verificador = Signature.getInstance("SHA256withRSA");
-                    verificador.initVerify(clientePublicKey);
-                    verificador.update(mensajeDesencriptado);
-
-                    if (verificador.verify(firma)) {
-                        // La firma es válida, mostrar el mensaje
-                        String mensajeTexto = new String(mensajeDesencriptado);
-                        System.out.println("Mensaje recibido: " + mensajeTexto);
-                    } else {
-                        System.err.println("Firma inválida. Mensaje descartado.");
+                    if (firmaDesencriptada.equals(mensajeHasheado)) {
+                        System.out.println("Mensaje recibido de un cliente: " + mensajeDesencriptado);
                     }
                 }
+
             } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
-                     NoSuchPaddingException | InvalidKeyException | BadPaddingException |
-                     IllegalBlockSizeException | SignatureException e) {
+                     NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
             } finally {
                 try {
-                    clientSocket.close();
+                    if (out != null) {
+                        out.close();
+                    }
+                    if (in != null) {
+                        in.close();
+                    }
+                    if (clientSocket != null) {
+                        clientSocket.close();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
+
+        private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+                IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(mensajeEncriptado));
+            return new String(decryptedBytes, "UTF-8");
+        }
+
+        private String DecryptWithPublic(String firmaEncriptada, PublicKey publicKey)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+                IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
+            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(firmaEncriptada));
+            return new String(decryptedBytes, "UTF-8");
+        }
     }
 }
 
-java
+Mensaje:
 
-import java.io.*;
-import java.net.Socket;
+import java.io.Serializable;
+import java.security.PublicKey;
+
+public class Mensaje implements Serializable {
+    private String mensajeEncriptado;
+    private String firma;
+    private PublicKey publicKey; // Agregamos la clave pública
+
+    public Mensaje(String mensajeEncriptado, String firma) {
+        this.mensajeEncriptado = mensajeEncriptado;
+        this.firma = firma;
+        this.publicKey = publicKey;
+    }
+
+    public String getMensajeEncriptado() {
+        return mensajeEncriptado;
+    }
+
+    public String getFirma() {
+        return firma;
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
+    }
+}
+
+Hash:
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.*;
-import java.util.Base64;
-import javax.crypto.Cipher;
 
-public class Cliente {
-    private static final long TIEMPO_ENTRE_MENSAJES = 3000;
-
-    public static void main(String[] args) {
+public class Hash {
+    public static String hashear(String mensaje) {
         try {
-            Socket socket = new Socket("172.16.255.201", 6969);
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-            BufferedReader lectorConsola = new BufferedReader(new InputStreamReader(System.in));
+            // creo instancia de algoritmo hash 'sha-256'
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-            // Generar claves pública y privada para el cliente
-            KeyPair clienteKeyPair = generarClaves();
+            // pasaje de string -> bytes
+            byte[] encodedhash = digest.digest(
+                    mensaje.getBytes(StandardCharsets.UTF_8));
 
-            // Recibir clave pública del servidor
-            PublicKey servidorPublicKey = (PublicKey) in.readObject();
-
-            // Enviar clave pública del cliente al servidor
-            out.writeObject(clienteKeyPair.getPublic());
-
-            // Configurar hilos para enviar y recibir mensajes
-            Thread hiloRecibirMensajes = new Thread(() -> {
-                try {
-                    while (true) {
-                        // Recibir mensaje cifrado y firmado
-                        byte[] mensajeCifrado = (byte[]) in.readObject();
-                        byte[] firma = (byte[]) in.readObject();
-
-                        // Descifrar el mensaje usando la clave privada del cliente
-                        Cipher decCipher = Cipher.getInstance("RSA");
-                        decCipher.init(Cipher.DECRYPT_MODE, clienteKeyPair.getPrivate());
-                        byte[] mensajeDesencriptado = decCipher.doFinal(mensajeCifrado);
-
-                        // Verificar la firma con la clave pública del servidor
-                        Signature verificador = Signature.getInstance("SHA256withRSA");
-                        verificador.initVerify(servidorPublicKey);
-                        verificador.update(mensajeDesencriptado);
-
-                        if (verificador.verify(firma)) {
-                            // La firma es válida, mostrar el mensaje
-                            String mensajeTexto = new String(mensajeDesencriptado);
-                            System.out.println("Mensaje recibido: " + mensajeTexto);
-                        } else {
-                            System.err.println("Firma inválida. Mensaje descartado.");
-                        }
-                    }
-                } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
-                         NoSuchPaddingException | InvalidKeyException | BadPaddingException |
-                         IllegalBlockSizeException | SignatureException e) {
-                    e.printStackTrace();
+            // convierto los bits pasados en hexadecimal
+            StringBuilder hexString = new StringBuilder(2 * encodedhash.length);
+            for (byte b : encodedhash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
                 }
-            });
-            hiloRecibirMensajes.start();
+                hexString.append(hex);
+            }
+            return hexString.toString();
 
-            Thread hiloEnviarMensajes = new Thread(() -> {
-                try {
-                    while (true) {
-                        String mensajeUsuario = lectorConsola.readLine();
-
-                        // Encriptar el mensaje con la clave pública del servidor
-                        Cipher encCipher = Cipher.getInstance("RSA");
-                        encCipher.init(Cipher.ENCRYPT_MODE, servidorPublicKey);
-                        byte[] mensajeCifrado = encCipher.doFinal(mensajeUsuario.getBytes());
-
-                        // Firmar el mensaje con la clave privada del cliente
-                        Signature firmador = Signature.getInstance("SHA256withRSA");
-                        firmador.initSign(clienteKeyPair.getPrivate());
-                        firmador.update(mensajeUsuario.getBytes());
-                        byte[] firma = firmador.sign();
-
-                        // Enviar mensaje cifrado y firmado al servidor
-                        out.writeObject(mensajeCifrado);
-                        out.writeObject(firma);
-
-                        Thread.sleep(TIEMPO_ENTRE_MENSAJES);
-                    }
-                } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException |
-                         InvalidKeyException | BadPaddingException | IllegalBlockSizeException |
-                         SignatureException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-            hiloEnviarMensajes.start();
-
-            // Esperar que ambos hilos terminen antes de cerrar los recursos
-            hiloRecibirMensajes.join();
-            hiloEnviarMensajes.join();
-
-            out.close();
-            in.close();
-            lectorConsola.close();
-            socket.close();
-        } catch (IOException | InterruptedException | ClassNotFoundException e) {
+        } catch (Exception e) {
+            // excepciones en caso de errores
             e.printStackTrace();
+            return null;
+        }
+    }
+}
+
+RSA:
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+public class RSA {
+
+    public static PrivateKey PrivateKey;
+    public static PublicKey PublicKey;
+
+    public RSA()
+    {
+        PublicKey = null;
+        PrivateKey = null;
+    }
+
+    public void setPrivateKeyString(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
+        byte[] encodedPrivateKey = stringToBytes(key);
+
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedPrivateKey);
+        PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+        this.PrivateKey = privateKey;
+    }
+
+    public void setPublicKeyString(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
+
+        byte[] encodedPublicKey = stringToBytes(key);
+
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublicKey);
+        PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+        this.PublicKey = publicKey;
+    }
+
+    public String getPrivateKeyString(){
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(this.PrivateKey.getEncoded());
+        return bytesToString(pkcs8EncodedKeySpec.getEncoded());
+    }
+
+    public String getPublicKeyString(){
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(this.PublicKey.getEncoded());
+        return bytesToString(x509EncodedKeySpec.getEncoded());
+    }
+
+
+    public void genKeyPair(int size) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException  {
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(size);
+        KeyPair kp = kpg.genKeyPair();
+
+        PublicKey publicKey = kp.getPublic();
+        PrivateKey privateKey = kp.getPrivate();
+
+        this.PrivateKey = privateKey;
+        this.PublicKey = publicKey;
+    }
+
+    public String Encrypt(String plain) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException,IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, UnsupportedEncodingException, NoSuchProviderException {
+
+        byte[] encryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, this.PublicKey);
+        encryptedBytes = cipher.doFinal(plain.getBytes());
+
+        return bytesToString(encryptedBytes);
+
+    }
+
+    public String EncryptWithPrivate(String plain) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException,IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, UnsupportedEncodingException, NoSuchProviderException {
+
+        byte[] encryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, this.PrivateKey);
+        encryptedBytes = cipher.doFinal(plain.getBytes());
+
+        return bytesToString(encryptedBytes);
+
+    }
+
+    public String Decrypt(String result) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+
+        byte[] decryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, this.PrivateKey);
+        decryptedBytes = cipher.doFinal(stringToBytes(result));
+        return new String(decryptedBytes);
+    }
+
+    public String DecryptWithPublic(String result) throws NoSuchAlgorithmException,NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+
+        byte[] decryptedBytes;
+
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, PublicKey);
+        decryptedBytes = cipher.doFinal(stringToBytes(result));
+        return new String(decryptedBytes);
+    }
+
+
+    public String bytesToString(byte[] b) {
+        byte[] b2 = new byte[b.length + 1];
+        b2[0] = 1;
+        System.arraycopy(b, 0, b2, 1, b.length);
+        return new BigInteger(b2).toString(36);
+    }
+
+    public byte[] stringToBytes(String s) {
+        byte[] b2 = new BigInteger(s, 24).toByteArray();
+        return Arrays.copyOfRange(b2, 1, b2.length);
+    }
+
+
+    public void saveToDiskPrivateKey(String path) throws IOException {
+        try {
+            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
+            out.write(this.getPrivateKeyString());
+            out.close();
+        } catch (Exception e) {
+            // TODO: handle exception
         }
     }
 
-    private static KeyPair generarClaves() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-        return keyPairGenerator.generateKeyPair();
+    public void saveToDiskPublicKey(String path) {
+        try {
+            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
+            out.write(this.getPublicKeyString());
+            out.close();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
     }
+
+    public void openFromDiskPublicKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        String content = this.readFileAsString(path);
+        this.setPublicKeyString(content);
+    }
+
+    public void openFromDiskPrivateKey(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        String content = this.readFileAsString(path);
+        this.setPrivateKeyString(content);
+    }
+
+
+    private String readFileAsString(String filePath) throws IOException {
+        StringBuffer fileData = new StringBuffer();
+        BufferedReader reader = new BufferedReader(
+                new FileReader(filePath));
+        char[] buf = new char[1024];
+        int numRead=0;
+        while((numRead=reader.read(buf)) != -1){
+            String readData = String.valueOf(buf, 0, numRead);
+            fileData.append(readData);
+        }
+        reader.close();
+        return fileData.toString();
+    }
+
+
+
 }
 
-Estas modificaciones agregan el cifrado y la firma digital en las comunicaciones entre el servidor y el cliente. Ambos generan sus pares de claves públicas y privadas, intercambian las claves públicas, y luego utilizan estas claves para cifrar y firmar los mensajes. Los mensajes son transmitidos como bytes cifrados y firmados, y se verifican en el extremo receptor antes de mostrarlos.
+al ejecutar primero la clase servidor y luego la clase cliente esta se conecta al servidor pero al enviar el mensaje se crea esta exepcion en el servidor:
+
+Exception in thread "Thread-0" java.lang.ClassCastException: Sekiurity3.Mensaje cannot be cast to java.security.PublicKey
+	at Sekiurity3.Servidor$ClienteHandler.run(Servidor.java:87)
+
+
+
+
+
+
+
+
