@@ -8,6 +8,7 @@ import java.util.concurrent.*;
 public class Servidor {
     private static final int PUERTO = 6969;
     private static Set<PrintWriter> clientesConectados = new CopyOnWriteArraySet<>();
+    private static Map<PrintWriter, String> emisores = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         System.out.println("Servidor iniciado en el puerto " + PUERTO);
@@ -35,6 +36,7 @@ public class Servidor {
     private static class ManejadorCliente extends Thread {
         private Socket socket;
         private PrintWriter out;
+        private BufferedReader in;
         private String emisor;
 
         public ManejadorCliente(Socket socket) {
@@ -43,7 +45,7 @@ public class Servidor {
 
         public void run() {
             try {
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
                 // Obtener la IP del cliente
@@ -52,16 +54,19 @@ public class Servidor {
 
                 // Agregar el PrintWriter del cliente a la lista
                 clientesConectados.add(out);
+                emisores.put(out, emisor);
 
-                String mensaje;
-                while ((mensaje = in.readLine()) != null) {
-                    broadcastMensaje(new Mensaje(emisor, mensaje));
+                String mensajeTexto;
+                while ((mensajeTexto = in.readLine()) != null) {
+                    Mensaje mensaje = new Mensaje(emisor, mensajeTexto);
+                    broadcastMensaje(mensaje);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 if (out != null) {
                     clientesConectados.remove(out);
+                    emisores.remove(out);
                 }
                 try {
                     socket.close();
@@ -75,9 +80,13 @@ public class Servidor {
         // Enviar el mensaje a todos los clientes conectados
         private void broadcastMensaje(Mensaje mensaje) {
             for (PrintWriter cliente : clientesConectados) {
-                cliente.println(mensaje.getEmisor() + ": " + mensaje.getTexto());
+                // Evitar que el emisor reciba su propio mensaje
+                if (!emisores.get(cliente).equals(mensaje.getEmisor())) {
+                    cliente.println(mensaje);
+                }
             }
         }
     }
 }
+
 
