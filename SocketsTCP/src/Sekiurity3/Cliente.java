@@ -11,7 +11,7 @@ public class Cliente {
         try {
             Socket socket = new Socket(SERVIDOR_IP, PUERTO);
 
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
@@ -24,15 +24,11 @@ public class Cliente {
             // Hilo para recibir y mostrar mensajes del servidor
             Thread recibirMensajes = new Thread(() -> {
                 try {
-                    ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
-                    Mensaje mensaje;
-                    while ((mensaje = (Mensaje) objectIn.readObject()) != null) {
-                        // Verificar si el mensaje no proviene del mismo emisor
-                        if (!mensaje.getEmisor().equals(emisor)) {
-                            System.out.println(mensaje.getEmisor() + ": " + mensaje.getTexto());
-                        }
+                    String mensajeRecibido;
+                    while ((mensajeRecibido = in.readLine()) != null) {
+                        System.out.println(mensajeRecibido);
                     }
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
@@ -41,10 +37,9 @@ public class Cliente {
             // Hilo principal para enviar mensajes al servidor
             String userInput;
             while ((userInput = stdin.readLine()) != null) {
-                Mensaje mensaje = new Mensaje(emisor, userInput);
-                out.writeObject(mensaje);
-                out.flush();
+                out.println(userInput);
                 if (userInput.equalsIgnoreCase("salir")) {
+                    recibirMensajes.interrupt(); // Detener el hilo de recepción antes de salir
                     break;
                 }
             }
@@ -57,6 +52,7 @@ public class Cliente {
         }
     }
 }
+
 
 
 
