@@ -39,11 +39,9 @@ public class Servidor {
     private static class ClienteHandler implements Runnable {
         private Socket socketCliente;
         private PrintWriter out;
-        private String ipCliente;
 
         public ClienteHandler(Socket socketCliente) {
             this.socketCliente = socketCliente;
-            this.ipCliente = socketCliente.getInetAddress().getHostAddress();
         }
 
         public void run() {
@@ -57,8 +55,8 @@ public class Servidor {
 
                 String mensajeTexto;
                 while ((mensajeTexto = in.readLine()) != null) {
-                    Mensaje mensaje = new Mensaje(ipCliente, mensajeTexto);
-                    System.out.println("Mensaje recibido de " + ipCliente + ": " + mensajeTexto);
+                    Mensaje mensaje = new Mensaje(socketCliente.getInetAddress().getHostAddress(), mensajeTexto);
+                    System.out.println("Mensaje recibido de " + mensaje.getRemitente() + ": " + mensaje.getContenido());
                     difundirMensaje(mensaje);
                 }
             } catch (IOException e) {
@@ -68,7 +66,7 @@ public class Servidor {
                     // Cerrar el socket y eliminar al cliente de la lista
                     clientesConectados.remove(out);
                     socketCliente.close();
-                    Mensaje mensajeDesconexion = new Mensaje(ipCliente, "se ha desconectado");
+                    Mensaje mensajeDesconexion = new Mensaje(socketCliente.getInetAddress().getHostAddress(), "se ha desconectado");
                     difundirMensaje(mensajeDesconexion);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -77,3 +75,4 @@ public class Servidor {
         }
     }
 }
+
