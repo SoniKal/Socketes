@@ -2,8 +2,8 @@ explicar las siguientes clases en detalle:
 
 package sekiuriti;
 
-import ClienteServidor_Extra.Hash;
-import ClienteServidor_Extra.RSA;
+import sekiuriti.Hash;
+import sekiuriti.RSA;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;

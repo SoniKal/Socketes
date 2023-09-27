@@ -1,8 +1,4 @@
-/*package sekiuriti;
-
-import ClienteServidor_Extra.Hash;
-import ClienteServidor_Extra.Mensaje;
-import ClienteServidor_Extra.RSA;
+package sekiuriti;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -16,20 +12,15 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class Cliente {
-    private static RSA rsa;
-    private static RSA rsaServer;
-    private static Hash hash;
+    private static RSA rsa = new RSA();
+    private static RSA rsaServer = new RSA();
+    private static Hash hash = new Hash();
 
     public static void main(String[] args) {
         try {
             Socket socket = new Socket("172.16.255.201", 6969);
             ObjectOutputStream escritor = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream lector = new ObjectInputStream(socket.getInputStream());
-
-            rsa = new RSA();
-            rsaServer = new RSA();
-            hash = new Hash();
-            rsa.genKeyPair(2048);
 
             Mensaje claveServer = (Mensaje) lector.readObject(); // recibe publica servidor
             rsaServer.setPublicKeyString(claveServer.getExtra());
@@ -78,14 +69,6 @@ public class Cliente {
         } catch (IOException | InterruptedException | ClassNotFoundException | NoSuchAlgorithmException |
                  InvalidKeySpecException e) {
             e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
         }
     }
-}*/
+}

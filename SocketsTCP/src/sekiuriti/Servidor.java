@@ -1,7 +1,4 @@
-/*package sekiuriti;
-
-import ClienteServidor_Extra.Hash;
-import ClienteServidor_Extra.RSA;
+package sekiuriti;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -10,11 +7,10 @@ import java.io.*;
 import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-
 import java.util.List;
-
 
 public class Servidor {
     private ServerSocket serverSocket;
@@ -41,9 +37,6 @@ public class Servidor {
 
                 ClienteHandler clienteHandler = new ClienteHandler(clientSocket);
                 clientes.add(clienteHandler);
-                System.out.println(clienteHandler);
-                System.out.println(clienteHandler.getId());
-                System.out.println(clienteHandler.getStackTrace());
                 clienteHandler.start();
             }
 
@@ -67,7 +60,9 @@ public class Servidor {
     private class ClienteHandler extends Thread {
         private Socket clientSocket;
         private ObjectOutputStream out;
+        private PrintWriter outReader;
         private ObjectInputStream in;
+
         private Hash hash;
 
         public ClienteHandler(Socket socket) {
@@ -77,42 +72,43 @@ public class Servidor {
 
         public void run() {
             try {
+                outReader = new PrintWriter(clientSocket.getOutputStream(), true); // establece flujos entrada y salida
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 hash = new Hash();
 
-                out.writeObject(new Mensaje(rsa.getPublicKeyString())); //server envia su publica
+                out.writeObject(new Mensaje(rsa.getPublicKeyString())); //server envía su clave pública
                 out.flush();
 
                 Mensaje claveCliente = (Mensaje) in.readObject();
-
-                rsaCliente.setPublicKeyString(claveCliente.getExtra()); // recibe publica servidor
+                rsaCliente.setPublicKeyString(claveCliente.getExtra()); // recibe clave pública del cliente
 
                 Mensaje mensaje;
-                while((mensaje = (Mensaje) in.readObject() )!= null){
+                while ((mensaje = (Mensaje) in.readObject()) != null) {
 
-                    String extra1, extra2, extra3;
+                    String mensajeDesencriptado, mensajeHasheado, mensajeHash;
 
-                    extra1 = rsaCliente.DecryptWithPublic(mensaje.getMensajeHasheado());
-                    extra2 = hash.hashear(rsa.Decrypt(mensaje.getMensajeEncriptado()));
+                    mensajeDesencriptado = rsaCliente.Decrypt(mensaje.getMensajeEncriptado());
+                    mensajeHasheado = hash.hashear(mensajeDesencriptado);
+                    mensajeHash = rsa.DecryptWithPublic(mensaje.getExtra());
 
-                    if (extra1.equals(extra2) ){
+                    if (mensajeHasheado.equals(mensajeHash)) {
                         System.out.println("Mensaje recibido de un cliente.");
-                        extra3 = rsa.Decrypt(mensaje.getMensajeEncriptado());
                         for (ClienteHandler cliente : Servidor.this.clientes) {
                             if (cliente != this) {
-                                cliente.enviarMensaje(extra3);
+                                cliente.enviarMensaje(mensajeDesencriptado);
                             }
                         }
                     }
                 }
-
 
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (NoSuchPaddingException | IllegalBlockSizeException |
                      NoSuchAlgorithmException | BadPaddingException |
                      InvalidKeySpecException | InvalidKeyException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchProviderException e) {
                 throw new RuntimeException(e);
             } finally {
                 try {
@@ -128,13 +124,8 @@ public class Servidor {
             }
         }
 
-        public void enviarMensaje(String mensaje) {
-            try {
-                out.writeObject(mensaje);
-                out.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        public void enviarMensaje(String mensaje) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeySpecException, InvalidKeyException, NoSuchProviderException {
+            outReader.println(mensaje);
         }
     }
-}*/
+}

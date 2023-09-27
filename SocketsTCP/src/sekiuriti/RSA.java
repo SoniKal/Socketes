@@ -1,4 +1,4 @@
-package ClienteServidor_Extra;
+package sekiuriti;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,13 +30,13 @@ import javax.crypto.NoSuchPaddingException;
 
 public class RSA {
 
-    public static PrivateKey PrivateKey = null;
-    public static PublicKey PublicKey = null;
+    public static PrivateKey PrivateKey;
+    public static PublicKey PublicKey;
 
     public RSA()
     {
-
-
+        PublicKey = null;
+        PrivateKey = null;
     }
 
     public void setPrivateKeyString(String key) throws NoSuchAlgorithmException, InvalidKeySpecException{
@@ -135,7 +135,7 @@ public class RSA {
     }
 
     public byte[] stringToBytes(String s) {
-        byte[] b2 = new BigInteger(s, 36).toByteArray();
+        byte[] b2 = new BigInteger(s, 24).toByteArray();
         return Arrays.copyOfRange(b2, 1, b2.length);
     }
 
