@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 
 public class Cliente {
-    private static final String SERVIDOR_IP = "localhost"; // Cambiar a la IP del servidor si es necesario
+    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la IP del servidor si es necesario
     private static final int PUERTO = 6969;
 
     public static void main(String[] args) {
