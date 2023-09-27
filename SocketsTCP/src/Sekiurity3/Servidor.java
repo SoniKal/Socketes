@@ -7,8 +7,7 @@ import java.util.concurrent.*;
 
 public class Servidor {
     private static final int PUERTO = 6969;
-    private static Set<PrintWriter> clientesConectados = new CopyOnWriteArraySet<>();
-    private static Map<PrintWriter, String> emisores = new ConcurrentHashMap<>();
+    private static Set<ObjectOutputStream> clientesConectados = new CopyOnWriteArraySet<>();
 
     public static void main(String[] args) {
         System.out.println("Servidor iniciado en el puerto " + PUERTO);
@@ -35,8 +34,7 @@ public class Servidor {
 
     private static class ManejadorCliente extends Thread {
         private Socket socket;
-        private PrintWriter out;
-        private BufferedReader in;
+        private ObjectOutputStream out;
         private String emisor;
 
         public ManejadorCliente(Socket socket) {
@@ -45,28 +43,29 @@ public class Servidor {
 
         public void run() {
             try {
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new PrintWriter(socket.getOutputStream(), true);
+                out = new ObjectOutputStream(socket.getOutputStream());
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                 // Obtener la IP del cliente
                 emisor = socket.getInetAddress().getHostAddress();
                 System.out.println("Cliente conectado desde " + emisor);
 
-                // Agregar el PrintWriter del cliente a la lista
+                // Agregar el ObjectOutputStream del cliente a la lista
                 clientesConectados.add(out);
-                emisores.put(out, emisor);
 
-                String mensajeTexto;
-                while ((mensajeTexto = in.readLine()) != null) {
-                    Mensaje mensaje = new Mensaje(emisor, mensajeTexto);
-                    broadcastMensaje(mensaje);
+                String linea;
+                while ((linea = in.readLine()) != null) {
+                    // Parsear la línea recibida como un objeto Mensaje
+                    Mensaje mensaje = parsearMensaje(linea);
+                    if (mensaje != null) {
+                        broadcastMensaje(mensaje);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 if (out != null) {
                     clientesConectados.remove(out);
-                    emisores.remove(out);
                 }
                 try {
                     socket.close();
@@ -77,16 +76,38 @@ public class Servidor {
             }
         }
 
-        // Enviar el mensaje a todos los clientes conectados
+        // Método para enviar el mensaje a todos los clientes conectados
         private void broadcastMensaje(Mensaje mensaje) {
-            for (PrintWriter cliente : clientesConectados) {
-                // Evitar que el emisor reciba su propio mensaje
-                if (!emisores.get(cliente).equals(mensaje.getEmisor())) {
-                    cliente.println(mensaje);
+            for (ObjectOutputStream cliente : clientesConectados) {
+                try {
+                    if (cliente != out) {
+                        cliente.writeObject(mensaje);
+                        cliente.flush();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
+
+        // Método para parsear una línea en un objeto Mensaje
+        private Mensaje parsearMensaje(String linea) {
+            try {
+                String[] partes = linea.split(": ", 2);
+                if (partes.length == 2) {
+                    String emisor = partes[0];
+                    String texto = partes[1];
+                    return new Mensaje(emisor, texto);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 }
+
+
+
 
 

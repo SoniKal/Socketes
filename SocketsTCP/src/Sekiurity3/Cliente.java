@@ -1,8 +1,5 @@
 package Sekiurity3;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 
@@ -11,72 +8,50 @@ public class Cliente {
     private static final int PUERTO = 6969;
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new ChatClientFrame();
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setVisible(true);
-        });
-    }
-}
-
-class ChatClientFrame extends JFrame {
-    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la IP del servidor si es necesario
-    private static final int PUERTO = 6969;
-
-    private Socket socket;
-    private ObjectOutputStream out;
-
-    private JTextField messageField;
-    private JTextArea chatArea;
-
-    public ChatClientFrame() {
-        setTitle("Cliente de Chat");
-        setSize(400, 300);
-        setLayout(new BorderLayout());
-
-        chatArea = new JTextArea();
-        chatArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(chatArea);
-        add(scrollPane, BorderLayout.CENTER);
-
-        messageField = new JTextField();
-        messageField.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                sendMessage(messageField.getText());
-            }
-        });
-        add(messageField, BorderLayout.SOUTH);
-
         try {
-            socket = new Socket(SERVIDOR_IP, PUERTO);
-            out = new ObjectOutputStream(socket.getOutputStream());
+            Socket socket = new Socket(SERVIDOR_IP, PUERTO);
 
-            Thread recibirMensajes = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-                        while (true) {
-                            Mensaje mensajeRecibido = (Mensaje) in.readObject();
-                            chatArea.append(mensajeRecibido.toString() + "\n");
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+
+            System.out.println("Conectado al servidor. Escribe un mensaje o 'salir' para desconectarte.");
+
+            // Obtener la IP del cliente
+            final String emisor = socket.getLocalAddress().getHostAddress();
+
+            // Hilo para recibir y mostrar mensajes del servidor
+            Thread recibirMensajes = new Thread(() -> {
+                try {
+                    ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
+                    Mensaje mensaje;
+                    while ((mensaje = (Mensaje) objectIn.readObject()) != null) {
+                        // Verificar si el mensaje no proviene del mismo emisor
+                        if (!mensaje.getEmisor().equals(emisor)) {
+                            System.out.println(mensaje.getEmisor() + ": " + mensaje.getTexto());
                         }
-                    } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
                     }
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
             });
             recibirMensajes.start();
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+            // Hilo principal para enviar mensajes al servidor
+            String userInput;
+            while ((userInput = stdin.readLine()) != null) {
+                Mensaje mensaje = new Mensaje(emisor, userInput);
+                out.writeObject(mensaje);
+                out.flush();
+                if (userInput.equalsIgnoreCase("salir")) {
+                    break;
+                }
+            }
 
-    private void sendMessage(String message) {
-        try {
-            Mensaje mensaje = new Mensaje(socket.getLocalAddress().getHostAddress(), message);
-            out.writeObject(mensaje);
-            out.flush();
-            messageField.setText("");
+            out.close();
+            stdin.close();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
