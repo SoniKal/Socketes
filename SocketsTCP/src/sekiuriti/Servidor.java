@@ -1,4 +1,4 @@
-package sekiuriti;
+/*package sekiuriti;
 
 import ClienteServidor_Extra.Hash;
 import ClienteServidor_Extra.RSA;
@@ -130,4 +130,4 @@ public class Servidor {
             }
         }
     }
-}
+}*/

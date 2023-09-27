@@ -1,6 +1,7 @@
-package sekiuriti;
+/*package sekiuriti;
 
 import ClienteServidor_Extra.Hash;
+import ClienteServidor_Extra.Mensaje;
 import ClienteServidor_Extra.RSA;
 
 import javax.crypto.BadPaddingException;
@@ -87,4 +88,4 @@ public class Cliente {
             throw new RuntimeException(e);
         }
     }
-}
+}*/
