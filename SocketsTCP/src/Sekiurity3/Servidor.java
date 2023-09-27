@@ -6,71 +6,76 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class Servidor {
-    private static final int PUERTO = 12345;
+    private static final int PUERTO = 6969;
     private static Set<PrintWriter> clientesConectados = new CopyOnWriteArraySet<>();
 
     public static void main(String[] args) {
+        System.out.println("Servidor iniciado en el puerto " + PUERTO);
+        ServerSocket serverSocket = null;
+
         try {
-            ServerSocket serverSocket = new ServerSocket(PUERTO);
-            System.out.println("Servidor iniciado en el puerto " + PUERTO);
+            serverSocket = new ServerSocket(PUERTO);
 
             while (true) {
-                Socket socketCliente = serverSocket.accept();
-                System.out.println("Cliente conectado desde " + socketCliente.getInetAddress());
-
-                // Crear un nuevo hilo para manejar al cliente
-                Thread clienteThread = new Thread(new ClienteHandler(socketCliente));
-                clienteThread.start();
+                new ManejadorCliente(serverSocket.accept()).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (serverSocket != null) {
+                    serverSocket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    // Método para difundir un mensaje a todos los clientes conectados
-    public static void difundirMensaje(Mensaje mensaje) {
-        for (PrintWriter cliente : clientesConectados) {
-            cliente.println(mensaje);
-            cliente.flush();
-        }
-    }
-
-    // Clase interna para manejar a un cliente
-    private static class ClienteHandler implements Runnable {
-        private Socket socketCliente;
+    private static class ManejadorCliente extends Thread {
+        private Socket socket;
         private PrintWriter out;
+        private String emisor;
 
-        public ClienteHandler(Socket socketCliente) {
-            this.socketCliente = socketCliente;
+        public ManejadorCliente(Socket socket) {
+            this.socket = socket;
         }
 
         public void run() {
             try {
-                // Crear un PrintWriter para enviar mensajes al cliente
-                out = new PrintWriter(socketCliente.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+
+                // Obtener la IP del cliente
+                emisor = socket.getInetAddress().getHostAddress();
+                System.out.println("Cliente conectado desde " + emisor);
+
+                // Agregar el PrintWriter del cliente a la lista
                 clientesConectados.add(out);
 
-                // Crear un lector de entrada para recibir mensajes del cliente
-                BufferedReader in = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
-
-                String mensajeTexto;
-                while ((mensajeTexto = in.readLine()) != null) {
-                    Mensaje mensaje = new Mensaje(socketCliente.getInetAddress().getHostAddress(), mensajeTexto);
-                    System.out.println("Mensaje recibido de " + mensaje.getRemitente() + ": " + mensaje.getContenido());
-                    difundirMensaje(mensaje);
+                String mensaje;
+                while ((mensaje = in.readLine()) != null) {
+                    broadcastMensaje(new Mensaje(emisor, mensaje));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                try {
-                    // Cerrar el socket y eliminar al cliente de la lista
+                if (out != null) {
                     clientesConectados.remove(out);
-                    socketCliente.close();
-                    Mensaje mensajeDesconexion = new Mensaje(socketCliente.getInetAddress().getHostAddress(), "se ha desconectado");
-                    difundirMensaje(mensajeDesconexion);
+                }
+                try {
+                    socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                System.out.println("Cliente desconectado desde " + emisor);
+            }
+        }
+
+        // Enviar el mensaje a todos los clientes conectados
+        private void broadcastMensaje(Mensaje mensaje) {
+            for (PrintWriter cliente : clientesConectados) {
+                cliente.println(mensaje.getEmisor() + ": " + mensaje.getTexto());
             }
         }
     }

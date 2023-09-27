@@ -2,36 +2,34 @@ package Sekiurity3;
 
 import java.io.*;
 import java.net.*;
-import java.util.Scanner;
 
 public class Cliente {
-    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la dirección IP del servidor si es necesario
-    private static final int PUERTO = 12345;
+    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la IP del servidor si es necesario
+    private static final int PUERTO = 6969;
 
     public static void main(String[] args) {
         try {
-            Socket socketCliente = new Socket(SERVIDOR_IP, PUERTO);
-            System.out.println("Conectado al servidor en " + SERVIDOR_IP + ":" + PUERTO);
+            Socket socket = new Socket(SERVIDOR_IP, PUERTO);
 
-            BufferedReader in = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
-            PrintWriter out = new PrintWriter(socketCliente.getOutputStream(), true);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            Scanner scanner = new Scanner(System.in);
+            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
-            String mensajeTexto;
+            System.out.println("Conectado al servidor. Escribe un mensaje o 'salir' para desconectarte.");
 
-            while (true) {
-                System.out.print("Ingrese un mensaje (o 'salir' para desconectarse): ");
-                mensajeTexto = scanner.nextLine();
-
-                if ("salir".equalsIgnoreCase(mensajeTexto)) {
+            String userInput;
+            while ((userInput = stdin.readLine()) != null) {
+                out.println(userInput);
+                if (userInput.equalsIgnoreCase("salir")) {
                     break;
                 }
-
-                out.println(mensajeTexto);
             }
 
-            socketCliente.close();
+            out.close();
+            in.close();
+            stdin.close();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
