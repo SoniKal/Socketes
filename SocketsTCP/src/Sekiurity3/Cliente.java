@@ -1,57 +1,98 @@
 package Sekiurity3;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.net.*;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
+import java.util.Scanner;
+import javax.crypto.Cipher;
 
 public class Cliente {
-    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la IP del servidor si es necesario
-    private static final int PUERTO = 6969;
+    private Socket socket;
+    private KeyPair clienteKeyPair;
+    private PublicKey servidorPublicKey;
 
     public static void main(String[] args) {
+        Cliente cliente = new Cliente();
+        cliente.iniciar();
+    }
+
+    public void iniciar() {
         try {
-            Socket socket = new Socket(SERVIDOR_IP, PUERTO);
+            socket = new Socket("localhost", 6969);
+            System.out.println("Conectado al servidor.");
 
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            clienteKeyPair = keyPairGenerator.generateKeyPair();
 
-            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-            System.out.println("Conectado al servidor. Escribe un mensaje o 'salir' para desconectarte.");
+            // Recibir clave pública del servidor
+            servidorPublicKey = (PublicKey) in.readObject();
 
-            // Obtener la IP del cliente
-            final String emisor = socket.getLocalAddress().getHostAddress();
-
-            // Hilo para recibir y mostrar mensajes del servidor
-            Thread recibirMensajes = new Thread(() -> {
+            Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
-                    String mensajeRecibido;
-                    while ((mensajeRecibido = in.readLine()) != null) {
-                        System.out.println(mensajeRecibido);
+                    Scanner scanner = new Scanner(System.in);
+                    while (true) {
+                        String mensajeUsuario = scanner.nextLine();
+                        String mensajeHasheado = Hash.hashear(mensajeUsuario);
+
+                        // Encriptar mensaje con la clave pública del servidor
+                        String mensajeEncriptado = EncryptWithPublic(mensajeUsuario, servidorPublicKey);
+
+                        // Firmar el mensaje y encriptar con la clave privada del cliente
+                        String firma = EncryptWithPrivate(mensajeHasheado, clienteKeyPair.getPrivate());
+
+                        Mensaje mensaje = new Mensaje(mensajeEncriptado, firma);
+                        out.writeObject(mensaje);
+                        out.flush();
                     }
-                } catch (IOException e) {
+                } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException |
+                         InvalidKeyException | IllegalBlockSizeException |
+                         BadPaddingException | InvalidKeySpecException e) {
                     e.printStackTrace();
                 }
             });
-            recibirMensajes.start();
 
-            // Hilo principal para enviar mensajes al servidor
-            String userInput;
-            while ((userInput = stdin.readLine()) != null) {
-                out.println(userInput);
-                if (userInput.equalsIgnoreCase("salir")) {
-                    recibirMensajes.interrupt(); // Detener el hilo de recepción antes de salir
-                    break;
-                }
-            }
+            hiloEnviarMensajes.start();
 
-            out.close();
-            stdin.close();
-            socket.close();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
+
+    // Métodos de encriptación
+    // ...
+
+    // Método para encriptar utilizando una clave pública
+    private String EncryptWithPublic(String mensaje, PublicKey publicKey)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+            UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    // Método para encriptar utilizando una clave privada
+    private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+            UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-package sekiuriti;
+/*package sekiuriti;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -128,4 +128,4 @@ public class Servidor {
             outReader.println(mensaje);
         }
     }
-}
+}*/

@@ -2,24 +2,32 @@ package Sekiurity3;
 
 import java.io.Serializable;
 
-// Clase para representar un mensaje
 public class Mensaje implements Serializable {
-    private String emisor; // IP del emisor
-    private String texto;  // Texto del mensaje
+    private String mensajeEncriptado;
+    private String firma;
 
-    public Mensaje(String emisor, String texto) {
-        this.emisor = emisor;
-        this.texto = texto;
+    public Mensaje(String mensajeEncriptado, String firma) {
+        this.mensajeEncriptado = mensajeEncriptado;
+        this.firma = firma;
     }
 
-    public String getEmisor() {
-        return emisor;
+    public String getMensajeEncriptado() {
+        return mensajeEncriptado;
     }
 
-    public String getTexto() {
-        return texto;
+    public void setMensajeEncriptado(String mensajeEncriptado) {
+        this.mensajeEncriptado = mensajeEncriptado;
+    }
+
+    public String getFirma() {
+        return firma;
+    }
+
+    public void setFirma(String firma) {
+        this.firma = firma;
     }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-package sekiuriti;
+/*package sekiuriti;
 
 import java.io.Serializable;
 
@@ -43,4 +43,4 @@ public class Mensaje implements Serializable {
     public void setExtra(String extra) {
         this.extra = extra;
     }
-}
+}*/

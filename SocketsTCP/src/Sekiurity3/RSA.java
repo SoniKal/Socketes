@@ -1,4 +1,4 @@
-/*package sekiuriti;
+package Sekiurity3;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -187,4 +187,4 @@ public class RSA {
 
 
 
-}*/
+}
