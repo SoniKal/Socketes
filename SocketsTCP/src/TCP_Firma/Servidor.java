@@ -104,7 +104,7 @@ public class Servidor {
                         for (ClienteHandler cliente : clientes) {
                             try {
                                 String textoAHashear = Hash.hashear(mensajeDesencriptado);
-                                String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, clientePublicKey);
+                                String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, cliente.clienteKeyPair.getPublic());
                                 String extra = EncryptWithPrivate(textoAHashear, servidorKeyPair.getPrivate());
                                 if(cliente != this){
 
