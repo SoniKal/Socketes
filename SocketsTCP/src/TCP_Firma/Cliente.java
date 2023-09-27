@@ -42,16 +42,19 @@ public class Cliente {
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
                     Mensaje mensaje;
-                    while ((mensaje = (Mensaje) in.readObject()) != null){
+                    while ((mensaje = (Mensaje) in.readObject()) != null) { //lee mensajes recibidos
                         Hash hash = new Hash();
+                        String mensajeEncriptado = mensaje.getMensajeEncriptado();
+                        String mensajeHasheado = mensaje.getMensajeHasheado();
 
-                        String mensajeDesencriptado = DecryptWithPrivate(mensaje.getMensajeEncriptado(), clienteKeyPair.getPrivate()); //desencripta
-                        String hashDesencriptada = DecryptWithPublic(mensaje.getMensajeHasheado(), servidorPublicKey);
+                        String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, clienteKeyPair.getPrivate()); //desencripta
+                        String hashDesencriptada = DecryptWithPublic(mensajeHasheado, servidorPublicKey);
                         String hasher = hash.hashear(mensajeDesencriptado);
 
                         if(hasher.equals(hashDesencriptada)){
                             System.out.println(mensaje.getExtra() + ": " + mensajeDesencriptado);
                         }
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

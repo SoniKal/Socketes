@@ -101,12 +101,20 @@ public class Servidor {
 
                     if(hasher.equals(hashDesencriptada)){
                         System.out.println("Mensaje de "+clientSocket.getInetAddress()+": " + mensajeDesencriptado);
+                        for (ClienteHandler cliente : clientes) {
+                            try {
+                                String textoAHashear = Hash.hashear(mensajeDesencriptado);
+                                String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, clientePublicKey);
+                                String extra = EncryptWithPrivate(textoAHashear, servidorKeyPair.getPrivate());
+                                if(cliente != this){
 
-                        String textoAHashear = Hash.hashear(mensajeDesencriptado);
-                        String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, clientePublicKey);
-                        String extra = EncryptWithPrivate(textoAHashear, servidorKeyPair.getPrivate());
-
-                        broadcastMessage(textoAEncriptar, extra);
+                                    cliente.out.writeObject(new Mensaje(textoAEncriptar, extra, cliente.getName()));
+                                    cliente.out.flush();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
 
                 }
@@ -129,20 +137,6 @@ public class Servidor {
                     }
                     // remueve el cliente de la lista al desconectar
                     clientes.remove(this);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        private void broadcastMessage(String textoAEncriptar, String extra) { //le manda clase Mensaje a todos los clientes
-            for (ClienteHandler cliente : clientes) {
-                try {
-                    if(cliente != this){
-
-                        cliente.out.writeObject(new Mensaje(textoAEncriptar, extra, cliente.getName()));
-                        cliente.out.flush();
-                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
