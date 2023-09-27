@@ -1,15 +1,12 @@
 package Sekiurity3;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Scanner;
-import javax.crypto.Cipher;
+import javax.crypto.*;
 
 public class Cliente {
     private Socket socket;
@@ -45,7 +42,10 @@ public class Cliente {
                     Scanner scanner = new Scanner(System.in);
                     while (true) {
                         String mensajeUsuario = scanner.nextLine();
-                        String mensajeHasheado = Hash.hashear(mensajeUsuario);
+
+                        // Generar el hash del mensaje usando hashCode
+                        int hashCode = mensajeUsuario.hashCode();
+                        String mensajeHasheado = Integer.toString(hashCode);
 
                         // Encriptar mensaje con la clave pública del servidor
                         String mensajeEncriptado = EncryptWithPublic(mensajeUsuario, servidorPublicKey);
@@ -96,6 +96,7 @@ public class Cliente {
         return Base64.getEncoder().encodeToString(encryptedBytes);
     }
 }
+
 
 
 

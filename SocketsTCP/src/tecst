@@ -182,7 +182,6 @@ public class Cliente {
 
 recordando que esto se trata de un sistema de difusion por TCP
 
-remover la funcion de COOLDOWN
 al iniciar el server este generara para si mismo una clave privada y publica
 al iniciar el cliente este generara para si mismo una clave privada y publica
 cuando el cliente se conecte al server, automaticamente recibiran la clave publica del otro (el cliente la del server y el server la del cliente) y las guardaran

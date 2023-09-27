@@ -137,7 +137,7 @@ public class Servidor {
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Nueva conexión aceptada");
+                System.out.println("Nueva conexión aceptada desde la dirección IP: " + clientSocket.getInetAddress().getHostAddress());
 
                 ClienteHandler clienteHandler = new ClienteHandler(clientSocket, servidorKeyPair);
                 clientes.add(clienteHandler);
@@ -199,7 +199,10 @@ public class Servidor {
                     String mensajeHasheado = hash.hashear(mensajeDesencriptado);
 
                     if (firmaDesencriptada.equals(mensajeHasheado)) {
-                        System.out.println("Mensaje recibido de un cliente: " + mensajeDesencriptado);
+                        System.out.println("Mensaje recibido de la dirección IP " + clientSocket.getInetAddress().getHostAddress() + ": " + mensajeDesencriptado);
+
+                        // Reenviar el mensaje a todos los clientes conectados
+                        broadcastMessage(mensajeDesencriptado);
                     }
                 }
 
@@ -217,12 +220,25 @@ public class Servidor {
                     if (clientSocket != null) {
                         clientSocket.close();
                     }
+                    // Remover este cliente de la lista al desconectar
+                    clientes.remove(this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
+        private void broadcastMessage(String mensaje) {
+            for (ClienteHandler cliente : clientes) {
+                try {
+                    cliente.out.writeObject(new Mensaje(mensaje, ""));
+                    cliente.out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        // Resto del código...
     }
 
         private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey)
@@ -499,10 +515,29 @@ public class RSA {
 
 }
 
-modificar para que al conectarse muestre la ip del cliente que se conecto en el servidor
-ademas modificar los codigos tanto de cliente y servidor teniendo en cuenta que el camino de los mensajes es el siguiente:
+modificar el codigo para dejar de utilizar la clase Hash e implementar el .HashCode
 
-CLIENTE ===> SERVIDOR =====> RESTO DE CLIENTES
+siempre recordando la consigna original:
+
+recordando que esto se trata de un sistema de difusion por TCP
+
+al iniciar el server este generara para si mismo una clave privada y publica
+al iniciar el cliente este generara para si mismo una clave privada y publica
+cuando el cliente se conecte al server, automaticamente recibiran la clave publica del otro (el cliente la del server y el server la del cliente) y las guardaran
+cuando el emisor envia un mensaje lo hara usando byte64
+
+el mensaje debe funcionar de la siguiente manera:
+(el servidor y el cliente son tanto emisores como receptores)
+(el camino del mensaje es Cliente--Servidor--Resto de clientes en el primer caso el emisor es el cliente y el receptor el servidor, en el segundo caso el emisor es el servidor y el receptor son los otros clientes)
+(se debe tratar a cada uno de los clientes como una persona individual)
+
+un mensaje encriptado con la clave publica del receptor
+una firma que sera el texto hasheado y encriptado con la clave privada del emisor
+el receptor recibira este mensaje y desencriptara las partes usando los datos necesarios
+comprobara que la firma sea correcta y si es asi mostrara el mensaje por terminal, solo el cliente debe mostrar el mensaje por terminal, el servidor no.
+el emisor del mensaje no debera recibir su propio mensaje
+
+añadir comentarios ocasionales en el codigo
 
 
 
