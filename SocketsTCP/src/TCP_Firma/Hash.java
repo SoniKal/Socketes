@@ -1,11 +1,10 @@
-/*package sekiuriti;
+package TCP_Firma;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.*;
 
 public class Hash {
-    public String hashear(String mensaje) {
+    public static String hashear(String mensaje) {
         try {
             // creo instancia de algoritmo hash 'sha-256'
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -31,4 +30,4 @@ public class Hash {
             return null;
         }
     }
-}*/
+}

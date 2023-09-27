@@ -1,4 +1,4 @@
-package Sekiurity3;
+package TCP_Firma;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -86,8 +87,8 @@ public class Servidor {
 
                 out.writeObject(servidorKeyPair.getPublic()); //envia publica de server a cliente
                 out.flush();
-                // recibir clave pública del cliente
-                PublicKey clientePublicKey = (PublicKey) in.readObject();
+
+                PublicKey clientePublicKey = (PublicKey) in.readObject(); // recibir clave pública del cliente
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) { //lee mensajes recibidos
@@ -97,15 +98,24 @@ public class Servidor {
                     String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, servidorKeyPair.getPrivate()); //desencripta
                     String hashDesencriptada = DecryptWithPublic(mensajeHasheado, clientePublicKey);
                     String hasher = hash.hashear(mensajeDesencriptado);
-                    System.out.println("llego");
 
-                        broadcastMessage(mensajeDesencriptado);
+                    if(hasher.equals(hashDesencriptada)){
+                        System.out.println("Mensaje de "+clientSocket.getInetAddress()+": " + mensajeDesencriptado);
+
+                        String textoAHashear = Hash.hashear(mensajeDesencriptado);
+                        String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, clientePublicKey);
+                        String extra = EncryptWithPrivate(textoAHashear, servidorKeyPair.getPrivate());
+
+                        broadcastMessage(textoAEncriptar, extra);
+                    }
 
                 }
 
             } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
                      NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
+            } catch (InvalidKeySpecException e) {
+                throw new RuntimeException(e);
             } finally {
                 try {
                     if (out != null) {
@@ -125,17 +135,39 @@ public class Servidor {
             }
         }
 
-        private void broadcastMessage(String mensaje) { //le manda clase Mensaje a todos los clientes
+        private void broadcastMessage(String textoAEncriptar, String extra) { //le manda clase Mensaje a todos los clientes
             for (ClienteHandler cliente : clientes) {
                 try {
                     if(cliente != this){
-                        cliente.out.writeObject(new Mensaje(mensaje, ""));
+
+                        cliente.out.writeObject(new Mensaje(textoAEncriptar, extra, cliente.getName()));
                         cliente.out.flush();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+        }
+
+        private String EncryptWithPublic(String mensaje, PublicKey publicKey)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+                IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+                UnsupportedEncodingException {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+            return Base64.getEncoder().encodeToString(encryptedBytes);
+        }
+
+        // método para encriptar utilizando una clave privada
+        private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+                IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
+                UnsupportedEncodingException {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+            byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
+            return Base64.getEncoder().encodeToString(encryptedBytes);
         }
     }
 

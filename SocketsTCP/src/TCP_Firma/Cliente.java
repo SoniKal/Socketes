@@ -1,4 +1,4 @@
-package Sekiurity3;
+package TCP_Firma;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -43,11 +43,30 @@ public class Cliente {
                 try {
                     Mensaje mensaje;
                     while ((mensaje = (Mensaje) in.readObject()) != null){
-                        System.out.println(mensaje.getMensajeEncriptado());
+                        Hash hash = new Hash();
+                        String mensajeEncriptado = mensaje.getMensajeEncriptado();
+                        String mensajeHasheado = mensaje.getMensajeHasheado();
+
+                        String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, clienteKeyPair.getPrivate()); //desencripta
+                        String hashDesencriptada = DecryptWithPublic(mensajeHasheado, servidorPublicKey);
+                        String hasher = hash.hashear(mensajeDesencriptado);
+                        if(hasher.equals(hashDesencriptada)){
+                            System.out.println(mensaje.getExtra() + ": " + mensajeDesencriptado);
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (NoSuchPaddingException e) {
+                    throw new RuntimeException(e);
+                } catch (IllegalBlockSizeException e) {
+                    throw new RuntimeException(e);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (BadPaddingException e) {
+                    throw new RuntimeException(e);
+                } catch (InvalidKeyException e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -68,7 +87,6 @@ public class Cliente {
                         Mensaje mensaje = new Mensaje(mensajeEncriptado, mensajeHasheado);
                         out.writeObject(mensaje);
                         out.flush();
-                        System.out.println("llego");
                     }
                 } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException |
                          InvalidKeyException | IllegalBlockSizeException |
@@ -105,12 +123,22 @@ public class Cliente {
         byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
         return Base64.getEncoder().encodeToString(encryptedBytes);
     }
+
+    private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey) //metodo para desencriptar
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(mensajeEncriptado));
+        return new String(decryptedBytes, "UTF-8");
+    }
+
+    private String DecryptWithPublic(String firmaEncriptada, PublicKey publicKey) //metodo para desencriptar
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, publicKey);
+        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(firmaEncriptada));
+        return new String(decryptedBytes, "UTF-8");
+    }
 }
-
-
-
-
-
-
-
-

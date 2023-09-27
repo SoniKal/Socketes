@@ -1,20 +1,20 @@
-package Sekiurity3;
+package TCP_Firma;
 
 import java.io.Serializable;
-import java.security.PublicKey;
-
 public class Mensaje implements Serializable {
     private String mensajeEncriptado;
     private String mensajeHasheado;
-    private PublicKey publicKey; // agregamos la clave pública
+    private String extra; // agregamos la clave pública
 
     public Mensaje(String mensajeEncriptado, String mensajeHasheado) {
         this.mensajeEncriptado = mensajeEncriptado;
         this.mensajeHasheado = mensajeHasheado;
     }
 
-    public Mensaje(PublicKey publicKey) {
-        this.publicKey = publicKey;
+    public Mensaje(String mensajeEncriptado, String mensajeHasheado, String extra) {
+        this.mensajeEncriptado = mensajeEncriptado;
+        this.mensajeHasheado = mensajeHasheado;
+        this.extra = extra;
     }
 
     public String getMensajeEncriptado() {
@@ -33,12 +33,12 @@ public class Mensaje implements Serializable {
         this.mensajeHasheado = mensajeHasheado;
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey;
+    public String getExtra() {
+        return extra;
     }
 
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
+    public void setExtra(String extra) {
+        this.extra = extra;
     }
 }
 
