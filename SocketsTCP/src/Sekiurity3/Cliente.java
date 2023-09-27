@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 
 public class Cliente {
-    private static final String SERVIDOR_IP = "172.16.255.221"; // Cambiar a la IP del servidor si es necesario
+    private static final String SERVIDOR_IP = "localhost"; // Cambiar a la IP del servidor si es necesario
     private static final int PUERTO = 6969;
 
     public static void main(String[] args) {
@@ -21,9 +21,9 @@ public class Cliente {
             // Hilo para recibir y mostrar mensajes del servidor
             Thread recibirMensajes = new Thread(() -> {
                 try {
-                    Mensaje mensajeRecibido;
-                    while ((mensajeRecibido = (Mensaje) in.readObject()) != null) {
-                        // Mostrar el mensaje en la consola utilizando el método toString de la clase Mensaje
+                    while (true) {
+                        // Recibe un objeto Mensaje del servidor y lo muestra
+                        Mensaje mensajeRecibido = (Mensaje) in.readObject();
                         System.out.println(mensajeRecibido);
                     }
                 } catch (IOException | ClassNotFoundException e) {
@@ -35,7 +35,7 @@ public class Cliente {
             // Hilo principal para enviar mensajes al servidor
             String userInput;
             while ((userInput = stdin.readLine()) != null) {
-                // Crear un objeto Mensaje con la IP del cliente y el texto ingresado
+                // Crear un objeto Mensaje con el texto ingresado
                 Mensaje mensaje = new Mensaje(socket.getLocalAddress().getHostAddress(), userInput);
                 out.writeObject(mensaje);
                 out.flush();
