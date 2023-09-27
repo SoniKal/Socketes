@@ -36,7 +36,7 @@ public class Servidor {
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Nueva conexión aceptada");
+                System.out.println("Nueva conexión aceptada desde la dirección IP: " + clientSocket.getInetAddress().getHostAddress());
 
                 ClienteHandler clienteHandler = new ClienteHandler(clientSocket, servidorKeyPair);
                 clientes.add(clienteHandler);
@@ -98,7 +98,10 @@ public class Servidor {
                     String mensajeHasheado = hash.hashear(mensajeDesencriptado);
 
                     if (firmaDesencriptada.equals(mensajeHasheado)) {
-                        System.out.println("Mensaje recibido de un cliente: " + mensajeDesencriptado);
+                        System.out.println("Mensaje recibido de la dirección IP " + clientSocket.getInetAddress().getHostAddress() + ": " + mensajeDesencriptado);
+
+                        // Reenviar el mensaje a todos los clientes conectados
+                        broadcastMessage(mensajeDesencriptado);
                     }
                 }
 
@@ -116,12 +119,24 @@ public class Servidor {
                     if (clientSocket != null) {
                         clientSocket.close();
                     }
+                    // Remover este cliente de la lista al desconectar
+                    clientes.remove(this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
+        private void broadcastMessage(String mensaje) {
+            for (ClienteHandler cliente : clientes) {
+                try {
+                    cliente.out.writeObject(new Mensaje(mensaje, ""));
+                    cliente.out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         // Resto del código...
     }
 

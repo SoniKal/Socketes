@@ -2,8 +2,6 @@ teniendo en cuenta estos codigos:
 
 Cliente:
 
-package Sekiurity3;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -27,7 +25,7 @@ public class Cliente {
 
     public void iniciar() {
         try {
-            socket = new Socket("localhost", 6969);
+            socket = new Socket("172.16.255.221", 6969);
             System.out.println("Conectado al servidor.");
 
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -39,6 +37,10 @@ public class Cliente {
 
             // Recibir clave pública del servidor
             servidorPublicKey = (PublicKey) in.readObject();
+
+            // Enviar la clave pública del cliente al servidor
+            out.writeObject(clienteKeyPair.getPublic());
+            out.flush();
 
             Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
@@ -99,17 +101,20 @@ public class Cliente {
 
 Servidor:
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 public class Servidor {
     private ServerSocket serverSocket;
@@ -180,16 +185,14 @@ public class Servidor {
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 hash = new Hash();
 
-                out.writeObject(servidorKeyPair.getPublic());
-                out.flush();
-
+                // Recibir clave pública del cliente
                 PublicKey clientePublicKey = (PublicKey) in.readObject();
 
                 Mensaje mensaje;
                 while ((mensaje = (Mensaje) in.readObject()) != null) {
                     String mensajeEncriptado = mensaje.getMensajeEncriptado();
                     String firmaEncriptada = mensaje.getFirma();
-                    PublicKey emisorPublicKey = mensaje.getPublicKey();
+                    PublicKey emisorPublicKey = clientePublicKey;
 
                     String mensajeDesencriptado = DecryptWithPrivate(mensajeEncriptado, clienteKeyPair.getPrivate());
                     String firmaDesencriptada = DecryptWithPublic(firmaEncriptada, emisorPublicKey);
@@ -220,6 +223,8 @@ public class Servidor {
             }
         }
 
+    }
+
         private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey)
                 throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
                 IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
@@ -238,7 +243,6 @@ public class Servidor {
             return new String(decryptedBytes, "UTF-8");
         }
     }
-}
 
 Mensaje:
 
@@ -495,10 +499,12 @@ public class RSA {
 
 }
 
-al ejecutar primero la clase servidor y luego la clase cliente esta se conecta al servidor pero al enviar el mensaje se crea esta exepcion en el servidor:
+modificar para que al conectarse muestre la ip del cliente que se conecto en el servidor
+ademas modificar los codigos tanto de cliente y servidor teniendo en cuenta que el camino de los mensajes es el siguiente:
 
-Exception in thread "Thread-0" java.lang.ClassCastException: Sekiurity3.Mensaje cannot be cast to java.security.PublicKey
-	at Sekiurity3.Servidor$ClienteHandler.run(Servidor.java:87)
+CLIENTE ===> SERVIDOR =====> RESTO DE CLIENTES
+
+
 
 
 

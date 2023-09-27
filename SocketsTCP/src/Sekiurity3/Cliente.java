@@ -23,7 +23,7 @@ public class Cliente {
 
     public void iniciar() {
         try {
-            socket = new Socket("localhost", 6969);
+            socket = new Socket("172.16.255.221", 6969);
             System.out.println("Conectado al servidor.");
 
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
