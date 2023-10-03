@@ -1,23 +1,26 @@
 package TCP_Firma;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.Socket;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Scanner;
-import javax.crypto.Cipher;
 
-public class Cliente {
+public class Cliente2 {
     private Socket socket;
     private KeyPair clienteKeyPair;
     private PublicKey servidorPublicKey;
 
     public static void main(String[] args) {
-        Cliente cliente = new Cliente();
+        Cliente2 cliente = new Cliente2();
         cliente.iniciar();
     }
 
