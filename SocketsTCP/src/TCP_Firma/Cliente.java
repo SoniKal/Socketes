@@ -23,21 +23,32 @@ public class Cliente {
 
     public void iniciar() {
         try {
-            socket = new Socket("172.16.255.201", 6968);
+            socket = new Socket("172.16.255.221", 6968);
             System.out.println("Conectado al servidor.");
 
+            //crea la clave publica y pribada
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             clienteKeyPair = keyPairGenerator.generateKeyPair();
 
+            //lee y envia mensajes
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             // recibir clave pública del servidor
             servidorPublicKey = (PublicKey) in.readObject();
+
+
+
+
+
             // enviar la clave pública del cliente al servidor
             out.writeObject(clienteKeyPair.getPublic());
             out.flush();
+
+
+
+
 
             Thread hiloRecibirMensajes = new Thread(() -> {
                 try {
@@ -72,7 +83,14 @@ public class Cliente {
                     throw new RuntimeException(e);
                 }
             });
+
+
+
+
             hiloRecibirMensajes.start();
+
+
+
 
             Thread hiloEnviarMensajes = new Thread(() -> {
                 try {
