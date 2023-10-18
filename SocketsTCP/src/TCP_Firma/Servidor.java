@@ -108,7 +108,6 @@ public class Servidor {
                                 String textoAEncriptar = EncryptWithPublic(mensajeDesencriptado, cliente.claveCliente);
                                 String extra = EncryptWithPrivate(textoAHashear, servidorKeyPair.getPrivate());
                                 if(cliente != this){
-
                                     cliente.out.writeObject(new Mensaje(textoAEncriptar, extra, cliente.getName()));
                                     cliente.out.flush();
                                 }

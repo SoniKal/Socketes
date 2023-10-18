@@ -17,6 +17,7 @@ public class Mensaje implements Serializable {
         this.extra = extra;
     }
 
+
     public String getMensajeEncriptado() {
         return mensajeEncriptado;
     }

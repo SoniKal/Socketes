@@ -39,15 +39,9 @@ public class Cliente {
             servidorPublicKey = (PublicKey) in.readObject();
 
 
-
-
-
             // enviar la clave pública del cliente al servidor
             out.writeObject(clienteKeyPair.getPublic());
             out.flush();
-
-
-
 
 
             Thread hiloRecibirMensajes = new Thread(() -> {
@@ -65,7 +59,6 @@ public class Cliente {
                         if(hasher.equals(hashDesencriptada)){
                             System.out.println(mensaje.getExtra() + ": " + mensajeDesencriptado);
                         }
-
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

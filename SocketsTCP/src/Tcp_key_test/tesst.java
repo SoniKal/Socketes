@@ -1,6 +1,7 @@
+package Tcp_key_test;
+
 import TCP_Firma.Hash;
 import TCP_Firma.Mensaje;
-
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,6 +13,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Scanner;
 
+import static com.sun.org.apache.xerces.internal.impl.dv.util.Base64.encode;
+
 public class tesst {
     private SecretKey key;
     private final int KEY_SIZE = 128;
@@ -21,20 +24,24 @@ public class tesst {
         Thread Empezar = new Thread(() -> {
             try {
                 String algorithm = "AES"; // Specify the algorithm (e.g., AES)
-                SecretKey secret;
                 KeyGenerator generator = KeyGenerator.getInstance("AES");
                 generator.init(256);
-                secret = generator.generateKey(); //Genera la llave
+                key = generator.generateKey(); //Genera la llave
 
-
-                System.out.println(secret + " " + "la llave al inicio");
-                String llave = secretKeyToString(secret);
+                System.out.println(key + " " + "la llave al inicio");
+                String llave = secretKeyToString(key);
                 System.out.println(llave+" "+"la llave convert en string");
 
-                byte[] encriptado = encryptData(llave,secret);
-                String salida = decryptData(encriptado,secret);
+                byte[] encriptado = encryptData(llave,key);
+                String salida = decryptData(encriptado,key);
                 SecretKey finl = stringToSecretKey(salida,algorithm);
                 System.out.println(finl+" "+"es la llave final"); //funcional
+
+                String negro = "negro";
+                System.out.println("el mensaje era "+" "+negro);
+                byte [] string_encriptado = encryptData(negro,key);
+                String mensaje_desen = decryptData(string_encriptado,key);
+                System.out.println(mensaje_desen);
 
 
             } catch (Exception ignore) {
@@ -70,7 +77,6 @@ public class tesst {
             byte[] decryptedData = cipher.doFinal(encryptedData);
             return new String(decryptedData, StandardCharsets.UTF_8);
     }
-
 
     public static void main(String[] args) {
         tesst t = new tesst();
