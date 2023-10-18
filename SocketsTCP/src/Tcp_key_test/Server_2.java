@@ -116,7 +116,7 @@ public class Server_2 {
                     for (ClienteHandler cliente:clientes) {
                         if(cliente != this){
                             String mensaje_encriptado = encrypt(mensaje_desencriptado);
-                            cliente.out.writeObject(new Mensaje_2(mensaje_encriptado);
+                            cliente.out.writeObject(new Mensaje_2(mensaje_encriptado));
                             cliente.out.flush();
                         }
                     }
