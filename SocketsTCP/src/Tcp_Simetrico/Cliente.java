@@ -66,7 +66,6 @@ public class Cliente {
                 try {
                     String msj;
                     while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
-                        System.out.println("Llego");
                         msj = decryptString(msj,AesKey);
                         System.out.println("Recibido: "+msj);
                     }
