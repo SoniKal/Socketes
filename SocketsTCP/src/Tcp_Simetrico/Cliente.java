@@ -148,24 +148,16 @@ public class Cliente {
         return new String(decryptedBytes, "UTF-8");
     }
 
-    public static String decryptString(String encryptedString, SecretKey secretKey) throws Exception {
-        // Initialize the Cipher with the decryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
+    public static String decryptString(String encryptedText, SecretKey secretKey) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
-        // Decode the Base64-encoded encrypted string to bytes
-        byte[] encryptedBytes = Base64.getDecoder().decode(encryptedString);
+        byte[] encryptedBytes = encryptedText.getBytes("UTF-8");
 
-        // Perform decryption
         byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
 
-        // Convert the decrypted bytes to a string
-        String decryptedString = new String(decryptedBytes);
-
-        return decryptedString;
-
+        return new String(decryptedBytes, "UTF-8");
     }
-
     public static String encryptString(String inputString, SecretKey secretKey) throws Exception {
         // Initialize the Cipher with the encryption mode and the secret key
         Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
