@@ -25,7 +25,7 @@ public class Cliente {
 
 
     public static void main(String[] args) {
-        TCP_Firma.Cliente cliente = new TCP_Firma.Cliente();
+        Tcp_Simetrico.Cliente cliente = new Tcp_Simetrico.Cliente();
         cliente.iniciar();
     }
 
@@ -50,15 +50,13 @@ public class Cliente {
             // enviar la clave pública del cliente al servidor
             out.writeObject(clienteKeyPair.getPublic());
             out.flush();
-
-            Tcp_Simetrico.Mensaje Aes = (Tcp_Simetrico.Mensaje) in.readObject();
+            TCP_Firma.Mensaje Aes = (TCP_Firma.Mensaje) in.readObject();
             String mensajeEncriptadoAes = Aes.getMensajeEncriptado();
             String mensajeHasheadoAes = Aes.getMensajeHasheado();
-
             String mensajeDesencriptadoAes = DecryptWithPrivate(mensajeEncriptadoAes, clienteKeyPair.getPrivate()); //desencripta
             String hashDesencriptadaAes = DecryptWithPublic(mensajeHasheadoAes, servidorPublicKey);
             String hasherAes = Hash.hashear(mensajeDesencriptadoAes);
-            byte[] decodedKey = Base64.getDecoder().decode(mensajeDesencriptadoAes);
+            byte[] decodedKey = Base64.getDecoder().decode(mensajeDesencriptadoAes.toString());
             if (hasherAes.equals(hashDesencriptadaAes)) {
                 AesKey = new SecretKeySpec(decodedKey, "AES");
             }
@@ -68,6 +66,7 @@ public class Cliente {
                 try {
                     String msj;
                     while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
+                        System.out.println("Llego");
                         msj = decryptString(msj,AesKey);
                         System.out.println("Recibido: "+msj);
                     }
@@ -99,7 +98,6 @@ public class Cliente {
                     Scanner scanner = new Scanner(System.in);
                     while (true) {
                         String mensajeUsuario = scanner.nextLine();
-                        String hash = Hash.hashear(mensajeUsuario);
 
                         // encriptar mensaje con la clave pública del servidor
                         String mensajeEncriptado = encryptString(mensajeUsuario,AesKey);
@@ -132,28 +130,6 @@ public class Cliente {
         }
     }
 
-    // método para encriptar utilizando una clave pública
-    private String EncryptWithPublic(String mensaje, PublicKey publicKey)
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
-            UnsupportedEncodingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encryptedBytes);
-    }
-
-    // método para encriptar utilizando una clave privada
-    private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
-            UnsupportedEncodingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-        byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encryptedBytes);
-    }
-
     private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey) //metodo para desencriptar
             throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
@@ -174,7 +150,7 @@ public class Cliente {
 
     public static String decryptString(String encryptedString, SecretKey secretKey) throws Exception {
         // Initialize the Cipher with the decryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
         // Decode the Base64-encoded encrypted string to bytes
@@ -192,7 +168,7 @@ public class Cliente {
 
     public static String encryptString(String inputString, SecretKey secretKey) throws Exception {
         // Initialize the Cipher with the encryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
         // Perform encryption

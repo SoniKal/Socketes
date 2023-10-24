@@ -95,16 +95,20 @@ public class Servidor {
                 out.flush();
 
                 claveCliente = (PublicKey) in.readObject(); // recibir clave pública del cliente
-
-                String SimEncriptadaPub = EncryptWithPrivate(SimetricaKey.toString(), servidorKeyPair.getPrivate());
-                String SimLlaveSim = EncryptWithPublic(Hash.hashear(SimetricaKey.toString()), claveCliente);
+                byte[] keyBytes = SimetricaKey.getEncoded();
+                String keyString = Base64.getEncoder().encodeToString(keyBytes);
+                String SimEncriptadaPub = EncryptWithPublic(keyString, claveCliente);
+                String SimLlaveSim = EncryptWithPrivate(Hash.hashear(keyString), servidorKeyPair.getPrivate());
                 Mensaje LlaveSimetrica = new Mensaje(SimEncriptadaPub, SimLlaveSim, this.getName());
                 out.writeObject(LlaveSimetrica);
                 out.flush();
 
                 String msj;
                 while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
+                    System.out.println("llego 1");
+                    System.out.println(msj);
                     msj = decryptString(msj, SimetricaKey);
+                    System.out.println("llego 2");
                     System.out.println("Mensaje de " + clientSocket.getInetAddress() + ": " + msj);
                     for (Tcp_Simetrico.Servidor.ClienteHandler cliente : clientes) {
                         try {
@@ -178,29 +182,9 @@ public class Servidor {
             return Base64.getEncoder().encodeToString(encryptedBytes);
         }
 
-
-
-    private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey) //metodo para desencriptar
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(mensajeEncriptado));
-        return new String(decryptedBytes, "UTF-8");
-    }
-
-    private String DecryptWithPublic(String firmaEncriptada, PublicKey publicKey) //metodo para desencriptar
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(firmaEncriptada));
-        return new String(decryptedBytes, "UTF-8");
-    }
-
     public static String decryptString(String encryptedString, SecretKey secretKey) throws Exception {
         // Initialize the Cipher with the decryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
         // Decode the Base64-encoded encrypted string to bytes
@@ -218,7 +202,7 @@ public class Servidor {
 
     public static String encryptString(String inputString, SecretKey secretKey) throws Exception {
         // Initialize the Cipher with the encryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
         // Perform encryption
