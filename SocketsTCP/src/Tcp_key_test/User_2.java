@@ -40,7 +40,7 @@ public class User_2 {
 
     public void init() throws Exception {
         //se conecta al server
-        socket = new Socket("172.16.255.221", 6968);
+        socket = new Socket("172.16.255.201", 6968);
         System.out.println("Conectado al servidor.");
 
         //envia y recibe mensajes del socket
