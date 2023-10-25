@@ -21,7 +21,7 @@ public class Cliente {
 
     public void iniciar() {
         try {
-            socket = new Socket("172.16.255.221", 6968);
+            socket = new Socket("172.16.255.201", 6968);
             System.out.println("Conectado al servidor.");
 
             //crea la clave publica y pribada

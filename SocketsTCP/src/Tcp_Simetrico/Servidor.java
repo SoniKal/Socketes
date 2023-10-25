@@ -112,8 +112,8 @@ public class Servidor {
                     for (Tcp_Simetrico.Servidor.ClienteHandler cliente : clientes) {
                         try {
                             if (cliente != this) {
-                                msj = encryptString(msj,SimetricaKey);
-                                cliente.out.writeObject(msj);
+                                String enviar = encryptString(msj,SimetricaKey);
+                                cliente.out.writeObject(enviar);
                                 cliente.out.flush();
                             }
                         } catch (IOException e) {
