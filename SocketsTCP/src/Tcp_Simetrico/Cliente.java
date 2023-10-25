@@ -63,7 +63,7 @@ public class Cliente {
                 try {
                     String msj;
                     while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
-                        msj = Decrypt(msj,AesKey);
+                        msj = decryptString(msj,AesKey);
                         System.out.println("Recibido: "+msj);
                     }
                 } catch (IOException e) {
