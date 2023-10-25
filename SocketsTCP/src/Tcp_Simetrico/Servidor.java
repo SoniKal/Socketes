@@ -32,10 +32,12 @@ public class Servidor {
         try {
             serverSocket = new ServerSocket(6968);
             System.out.println("Servidor iniciado. Esperando conexiones...");
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA"); //prepara la generacion de llaves
             keyPairGenerator.initialize(2048);
+
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
             keyGenerator.init(128);
+
             servidorKeyPair = keyPairGenerator.generateKeyPair(); //genera claves pub y priv
             SimetricaKey = keyGenerator.generateKey(); //genera clave simetrica
             clientes = new ArrayList<>();

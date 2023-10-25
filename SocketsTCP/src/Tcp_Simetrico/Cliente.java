@@ -47,11 +47,11 @@ public class Cliente {
             // enviar la clave pública del cliente al servidor
             out.writeObject(clienteKeyPair.getPublic());
             out.flush();
-            TCP_Firma.Mensaje Aes = (TCP_Firma.Mensaje) in.readObject();
-            String mensajeEncriptadoAes = Aes.getMensajeEncriptado();
-            String mensajeHasheadoAes = Aes.getMensajeHasheado();
-            String mensajeDesencriptadoAes = Decrypt(mensajeEncriptadoAes, clienteKeyPair.getPrivate()); //desencripta
-            String hashDesencriptadaAes = Decrypt(mensajeHasheadoAes, servidorPublicKey);
+
+            //recibe clave simetrica
+            TCP_Firma.Mensaje sime = (TCP_Firma.Mensaje) in.readObject();
+            String mensajeDesencriptadoAes = Decrypt(sime.getMensajeEncriptado(), clienteKeyPair.getPrivate()); //desencripta
+            String hashDesencriptadaAes = Decrypt(sime.getMensajeHasheado(), servidorPublicKey);
             String hasherAes = Hash.hashear(mensajeDesencriptadoAes);
             byte[] decodedKey = Base64.getDecoder().decode(mensajeDesencriptadoAes.toString());
             if (hasherAes.equals(hashDesencriptadaAes)) {
@@ -95,10 +95,8 @@ public class Cliente {
                     while (true) {
                         String mensajeUsuario = scanner.nextLine();
 
-                        // encriptar mensaje con la clave pública del servidor
+                        // encriptar mensaje y lo manda
                         String mensajeEncriptado = encryptString(mensajeUsuario,AesKey);
-
-                        // firmar el mensaje y encriptar con la clave privada del cliente
                         out.writeObject(mensajeEncriptado);
                         out.flush();
                     }
