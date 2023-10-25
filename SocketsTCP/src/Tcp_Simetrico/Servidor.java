@@ -97,18 +97,15 @@ public class Servidor {
                 claveCliente = (PublicKey) in.readObject(); // recibir clave pública del cliente
                 byte[] keyBytes = SimetricaKey.getEncoded();
                 String keyString = Base64.getEncoder().encodeToString(keyBytes);
-                String SimEncriptadaPub = EncryptWithPublic(keyString, claveCliente);
-                String SimLlaveSim = EncryptWithPrivate(Hash.hashear(keyString), servidorKeyPair.getPrivate());
+                String SimEncriptadaPub = Encrypt(keyString, claveCliente);
+                String SimLlaveSim = Encrypt(Hash.hashear(keyString), servidorKeyPair.getPrivate());
                 Mensaje LlaveSimetrica = new Mensaje(SimEncriptadaPub, SimLlaveSim, this.getName());
                 out.writeObject(LlaveSimetrica);
                 out.flush();
 
                 String msj;
                 while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
-                    System.out.println("llego 1");
-                    System.out.println(msj);
                     msj = decryptString(msj, SimetricaKey);
-                    System.out.println("llego 2");
                     System.out.println("Mensaje de " + clientSocket.getInetAddress() + ": " + msj);
                     for (Tcp_Simetrico.Servidor.ClienteHandler cliente : clientes) {
                         try {
@@ -162,7 +159,7 @@ public class Servidor {
             }
         }
 
-        private String EncryptWithPublic(String mensaje, PublicKey publicKey)
+        private String Encrypt(String mensaje, Key publicKey) //metodo para encriptar
                 throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
                 IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
                 UnsupportedEncodingException {
@@ -172,29 +169,18 @@ public class Servidor {
             return Base64.getEncoder().encodeToString(encryptedBytes);
         }
 
-        // método para encriptar utilizando una clave privada
-        private String EncryptWithPrivate(String mensaje, PrivateKey privateKey)
-                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-                IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException,
-                UnsupportedEncodingException {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            byte[] encryptedBytes = cipher.doFinal(mensaje.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(encryptedBytes);
-        }
-
     public static String decryptString(String encryptedString, SecretKey secretKey) throws Exception {
-        // Initialize the Cipher with the decryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
+        //inicializo el cipher con el modo decrypt y la clave secreta
+        Cipher cipher = Cipher.getInstance("AES"); //uso el sistema apropiado
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
-        // Decode the Base64-encoded encrypted string to bytes
+        //lo transformo en bytes base64
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedString);
 
-        // Perform decryption
+       //desencripto
         byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
 
-        // Convert the decrypted bytes to a string
+        // convierto los bytes a string
         String decryptedString = new String(decryptedBytes);
 
         return decryptedString;
@@ -202,14 +188,15 @@ public class Servidor {
     }
 
     public static String encryptString(String inputString, SecretKey secretKey) throws Exception {
-        // Initialize the Cipher with the encryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
+
+        //inicializo con el modo de encriptacion
+        Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-        // Perform encryption
+        //encripto
         byte[] encryptedBytes = cipher.doFinal(inputString.getBytes());
 
-        // Encode the encrypted bytes to Base64
+        //lo transformo denuevo a string
         String encryptedString = Base64.getEncoder().encodeToString(encryptedBytes);
 
         return encryptedString;

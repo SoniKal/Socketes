@@ -53,8 +53,8 @@ public class Cliente {
             TCP_Firma.Mensaje Aes = (TCP_Firma.Mensaje) in.readObject();
             String mensajeEncriptadoAes = Aes.getMensajeEncriptado();
             String mensajeHasheadoAes = Aes.getMensajeHasheado();
-            String mensajeDesencriptadoAes = DecryptWithPrivate(mensajeEncriptadoAes, clienteKeyPair.getPrivate()); //desencripta
-            String hashDesencriptadaAes = DecryptWithPublic(mensajeHasheadoAes, servidorPublicKey);
+            String mensajeDesencriptadoAes = Decrypt(mensajeEncriptadoAes, clienteKeyPair.getPrivate()); //desencripta
+            String hashDesencriptadaAes = Decrypt(mensajeHasheadoAes, servidorPublicKey);
             String hasherAes = Hash.hashear(mensajeDesencriptadoAes);
             byte[] decodedKey = Base64.getDecoder().decode(mensajeDesencriptadoAes.toString());
             if (hasherAes.equals(hashDesencriptadaAes)) {
@@ -129,7 +129,7 @@ public class Cliente {
         }
     }
 
-    private String DecryptWithPrivate(String mensajeEncriptado, PrivateKey privateKey) //metodo para desencriptar
+    private String Decrypt(String mensajeEncriptado,Key privateKey)
             throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
         Cipher cipher = Cipher.getInstance("RSA");
@@ -138,27 +138,14 @@ public class Cliente {
         return new String(decryptedBytes, "UTF-8");
     }
 
-    private String DecryptWithPublic(String firmaEncriptada, PublicKey publicKey) //metodo para desencriptar
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(firmaEncriptada));
-        return new String(decryptedBytes, "UTF-8");
-    }
-
     public static String decryptString(String encryptedString, SecretKey secretKey) throws Exception {
-        // Initialize the Cipher with the decryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
-
-        // Decode the Base64-encoded encrypted string to bytes
+        
         byte[] encryptedBytes = Base64.getDecoder().decode(encryptedString);
-
-        // Perform decryption
+        
         byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
 
-        // Convert the decrypted bytes to a string
         String decryptedString = new String(decryptedBytes);
 
         return decryptedString;
@@ -166,14 +153,11 @@ public class Cliente {
     }
 
     public static String encryptString(String inputString, SecretKey secretKey) throws Exception {
-        // Initialize the Cipher with the encryption mode and the secret key
-        Cipher cipher = Cipher.getInstance("AES"); // Use the appropriate transformation
+        Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-
-        // Perform encryption
+        
         byte[] encryptedBytes = cipher.doFinal(inputString.getBytes());
-
-        // Encode the encrypted bytes to Base64
+        
         String encryptedString = Base64.getEncoder().encodeToString(encryptedBytes);
 
         return encryptedString;
