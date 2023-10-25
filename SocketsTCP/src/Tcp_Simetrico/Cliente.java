@@ -1,10 +1,7 @@
 package Tcp_Simetrico;
 
 import TCP_Firma.Hash;
-import TCP_Firma.Mensaje;
-
 import javax.crypto.*;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.*;
@@ -66,7 +63,7 @@ public class Cliente {
                 try {
                     String msj;
                     while ((msj = (String) in.readObject()) != null) { //lee mensajes recibidos
-                        msj = decryptString(msj,AesKey);
+                        msj = Decrypt(msj,AesKey);
                         System.out.println("Recibido: "+msj);
                     }
                 } catch (IOException e) {
