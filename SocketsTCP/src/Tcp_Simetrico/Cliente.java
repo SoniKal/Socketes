@@ -17,7 +17,6 @@ public class Cliente {
     private Socket socket;
     private KeyPair clienteKeyPair;
     private PublicKey servidorPublicKey;
-
     private SecretKey AesKey;
 
 
