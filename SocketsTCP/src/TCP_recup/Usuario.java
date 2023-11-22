@@ -13,6 +13,8 @@ public class Usuario {
     private static List<Usuario> Usuarios = new ArrayList<>();
     private static List<Usuario> vecinos = new ArrayList<>();
 
+    private static List<Usuario> conectados = new ArrayList<>();
+
     public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
         this.direccionIP = direccionIP;
@@ -173,13 +175,29 @@ public class Usuario {
             return;
         }
 
+        // Después de que se conectan al menos dos usuarios, se muestra la topografía
+        for (int i = 0; i< Usuarios.size()-1; i++)
+            if(Usuarios.get(i+1).direccionIP.equals(ipPublica) && i != 3 || i != 0 && Usuarios.get(i-1).direccionIP.equals(ipPublica)){
+                vecinos.add(Usuarios.get(i));
+            }
+
+        System.out.println("Topografía de la red:");
+        for (Usuario usuario : Usuarios) {
+            System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
+        }
+
+        System.out.println("vecinos: ");
+        for (Usuario usuario : vecinos) {
+            System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
+        }
+
         // Inicia un thread para la escucha continua del servidor
         new Thread(() -> {
             try {
                 ServerSocket serverSocket = new ServerSocket(12345);
                 System.out.println("Esperando a que se conecten otros usuarios...");
 
-                while (Usuarios.size() < 2) {
+                while (true) {
                     Socket clienteSocket = serverSocket.accept();
                     System.out.println("¡Usuario conectado!");
 
@@ -201,22 +219,6 @@ public class Usuario {
                             e.printStackTrace();
                         }
                     }).start();
-                }
-
-                // Después de que se conectan al menos dos usuarios, se muestra la topografía
-                for (int i = 0; i< Usuarios.size()-1; i++)
-                    if(Usuarios.get(i+1).direccionIP.equals(ipPublica) && i != 3 || i != 0 && Usuarios.get(i-1).direccionIP.equals(ipPublica)){
-                       vecinos.add(Usuarios.get(i));
-                    }
-
-                System.out.println("Topografía de la red:");
-                for (Usuario usuario : Usuarios) {
-                    System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
-                }
-
-                System.out.println("vecinos: ");
-                for (Usuario usuario : vecinos) {
-                    System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
                 }
             } catch (IOException e) {
                 e.printStackTrace();
