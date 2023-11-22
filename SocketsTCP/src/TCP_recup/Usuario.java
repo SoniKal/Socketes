@@ -83,7 +83,7 @@ public class Usuario {
 
     public static void main(String[] args) {
         // Crear instancias de Usuario leyendo el archivo de texto
-        List<Usuario> usuarios = leerUsuariosDesdeArchivo("ruta/del/archivo.txt");
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
 
         // Enviar mensajes de prueba
         Scanner scanner = new Scanner(System.in);
