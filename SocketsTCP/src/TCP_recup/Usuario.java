@@ -29,8 +29,6 @@ public class Usuario {
     public void conectar(Mensaje M) {
         try {
             socket = new Socket(encontrarVecinoMasCercano(M.getDestinatario()).direccionIP, 12345);
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-            inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println(nombre + " se ha conectado.");
         } catch (ConnectException e) {
             System.out.println("Error al conectar: La conexión fue rechazada. Asegúrate de que el destinatario esté ejecutando el programa y escuchando en el puerto correcto.");
