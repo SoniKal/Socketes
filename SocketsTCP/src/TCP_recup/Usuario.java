@@ -25,9 +25,10 @@ public class Usuario {
         return direccionIP;
     }
 
-    public void conectar() {
+    public void conectar(Mensaje M) {
         try {
-            socket = new Socket(direccionIP, 12345);
+            encontrarVecinoMasCercano(M.getDestinatario());
+            socket = new Socket(M.getDestinatario(), 12345);
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println(nombre + " se ha conectado.");
@@ -54,7 +55,7 @@ public class Usuario {
     public void enviarMensaje(Mensaje mensaje) {
         if (!nombre.equals(mensaje.getDestinatario())) {
             try {
-                conectar();
+                conectar(mensaje);
                 if (socket != null && socket.isConnected()) {
                     outputStream.writeObject(mensaje);
                     System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
@@ -227,7 +228,6 @@ public class Usuario {
                         i.enviarMensaje(mensaje);
                     }
                 }
-                break; // Salir del bucle después de enviar el mensaje
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
