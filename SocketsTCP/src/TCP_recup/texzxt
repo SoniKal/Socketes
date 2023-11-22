@@ -1,3 +1,5 @@
+mi codigo:
+
 package TCP_recup;
 
 import java.io.*;
@@ -13,7 +15,6 @@ public class Usuario {
     private Socket socket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
-    private static List<Usuario> usuarios = new ArrayList<>();
 
     public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
@@ -30,7 +31,7 @@ public class Usuario {
 
     public void conectar() {
         try {
-            socket = new Socket(direccionIP, 12345);
+            socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println(nombre + " se ha conectado.");
@@ -61,47 +62,17 @@ public class Usuario {
                 if (socket != null && socket.isConnected()) {
                     outputStream.writeObject(mensaje);
                     System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
-                    desconectar(); // Desconectar después de enviar el mensaje
                 } else {
                     System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
                 }
             } catch (IOException e) {
                 System.out.println("Error al enviar el mensaje: " + e.getMessage());
                 e.printStackTrace();
+            } finally {
+                // No desconectamos aquí para permitir que el cliente siga enviando mensajes
             }
         } else {
             System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
-        }
-    }
-
-    private Usuario encontrarVecinoMasCercano(String destino) {
-        Usuario vecinoMasCercano = null;
-        int distanciaMasCercana = Integer.MAX_VALUE;
-
-        for (Usuario vecino : usuarios) {
-            if (!vecino.getNombre().equals(nombre) && !vecino.getNombre().equals(destino)) {
-                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(this));
-                if (distancia < distanciaMasCercana) {
-                    distanciaMasCercana = distancia;
-                    vecinoMasCercano = vecino;
-                }
-            }
-        }
-
-        return vecinoMasCercano;
-    }
-
-    public void recibirMensaje(Mensaje mensaje) {
-        if (nombre.equals(mensaje.getDestinatario())) {
-            System.out.println("Mensaje recibido de " + mensaje.getRemitente() + ": " + mensaje.getTexto());
-        } else {
-            Usuario vecinoMasCercano = encontrarVecinoMasCercano(mensaje.getDestinatario());
-            if (vecinoMasCercano != null) {
-                System.out.println(nombre + " reenviando mensaje a " + vecinoMasCercano.getNombre());
-                vecinoMasCercano.enviarMensaje(mensaje);
-            } else {
-                System.out.println("No se encontró un vecino para reenviar el mensaje.");
-            }
         }
     }
 
@@ -127,7 +98,6 @@ public class Usuario {
         }
     }
 
-
     private static List<Usuario> leerUsuariosDesdeArchivo(String rutaArchivo) {
         List<Usuario> usuarios = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
@@ -146,7 +116,6 @@ public class Usuario {
         return usuarios;
     }
 
-
     public static void main(String[] args) {
         String ipPublica = obtenerIPInterfaz();
 
@@ -157,7 +126,7 @@ public class Usuario {
             return;
         }
 
-        usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
 
         int posicion = -1;
         for (int i = 0; i < usuarios.size(); i++) {
@@ -178,34 +147,24 @@ public class Usuario {
         // Inicia un thread para la escucha continua del servidor
         new Thread(() -> {
             try {
-                ServerSocket serverSocket = new ServerSocket(12345);
-                System.out.println("Esperando a que se conecten otros usuarios...");
+                ServerSocket serverSocket = new ServerSocket(12345); // 12345 es el puerto de escucha
+                System.out.println("Esperando a que se conecte otro usuario...");
+                Socket clienteSocket = serverSocket.accept();
+                System.out.println("¡Usuario conectado!");
 
-                while (usuarios.size() < 2) {
-                    Socket clienteSocket = serverSocket.accept();
-                    System.out.println("¡Usuario conectado!");
-
-                    ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
-
-                    // Manejar la comunicación con el usuario conectado en otro thread
-                    new Thread(() -> {
-                        try {
-                            while (true) {
-                                Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
-                                usuarios.get(0).recibirMensaje(mensajeRecibido);
-                            }
-                        } catch (IOException | ClassNotFoundException e) {
-                            e.printStackTrace();
+                // Manejar la comunicación con el usuario conectado en otro thread
+                new Thread(() -> {
+                    try {
+                        ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
+                        while (true) {
+                            Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
+                            System.out.println("Mensaje recibido de " + mensajeRecibido.getRemitente() +
+                                    ": " + mensajeRecibido.getTexto());
                         }
-                    }).start();
-                }
-
-                // Después de que se conectan al menos dos usuarios, se muestra la topografía
-                System.out.println("Topografía de la red:");
-                for (Usuario usuario : usuarios) {
-                    System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
-                }
-
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -224,7 +183,6 @@ public class Usuario {
 
                 Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
                 usuarios.get(0).enviarMensaje(mensaje);
-                break; // Salir del bucle después de enviar el mensaje
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
@@ -235,7 +193,6 @@ public class Usuario {
 class Mensaje implements Serializable {
     private String texto;
     private String destinatario;
-    private String remitente; // Se agrega el remitente al mensaje
 
     public Mensaje(String texto, String destinatario) {
         this.texto = texto;
@@ -251,10 +208,19 @@ class Mensaje implements Serializable {
     }
 
     public String getRemitente() {
-        return remitente;
-    }
-
-    public void setRemitente(String remitente) {
-        this.remitente = remitente;
+        return "REMITENTE";
     }
 }
+
+modificar este trabajo donde sea necesario para cumplir con la siguiente consigna:
+
+el trabajo consiste en crear un codigo en JAVA que permita comunicar computadoras siguiendo una topografia de la siguiente manera:
+
+lo primero que debe hacer el codigo es conseguir la IPv4 de la interfaz mencionada anteriormente e iniciar un servidor que espere hasta a 2 usuarios luego leyendo del txt averiguar mi nombre y lugar en la topografia, las ips y nombres de mis vecinos
+
+luego mientras espero a que se conecten otros usuarios deben ocurrir una de dos cosas
+
+enviar mensaje: envio un mensaje con el siguiente formato "Nombredelreceptor":"texto" que escribo por terminal luego mi computadora debe analizar la posicion en la topografia del receptor y ubicar el vecino mas cercano en la toporafia EJ: si soy A y me receptor es C, el vecino mas cercano es B luego me desconecto
+esta usuario al recibir un mensaje, revisa si el es el receptor es el, si no repite el proceso de buscar el vecino mas cercano al receptor y reenviarlo a el hasta que alcance el destino
+
+recibir mensaje: ocurre cuando una computadora se conecta a la mia, primero debo revisar si el mensaje es para mi, si no lo reenvio al usuario mas cercano a mi en la topografia, si es para mi lo muestro por terminal
