@@ -1,9 +1,9 @@
 package TCP_recup;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 
@@ -17,6 +17,14 @@ public class Usuario {
     public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
         this.direccionIP = direccionIP;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getDireccionIP() {
+        return direccionIP;
     }
 
     public void conectar() {
@@ -41,72 +49,41 @@ public class Usuario {
         }
     }
 
-    private void iniciarServidor() {
-        try (ServerSocket serverSocket = new ServerSocket(12345)) {
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                // Manejar la conexión del nuevo usuario en un hilo separado
-                new Thread(() -> manejarConexion(clientSocket)).start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void manejarConexion(Socket clientSocket) {
-        try (
-                ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-                ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream())
-        ) {
-            // Manejar la conexión con el usuario
-            while (true) {
-                // Esperar un mensaje y mostrarlo
-                Mensaje mensaje = (Mensaje) inputStream.readObject();
-                System.out.println(nombre + " ha recibido un mensaje de " + mensaje.getRemitente() + ": " + mensaje.getTexto());
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void enviarMensaje(Mensaje mensaje) {
-        // Si el destinatario es el mismo que el remitente, no es necesario conectarse
         if (!nombre.equals(mensaje.getDestinatario())) {
-            conectar(); // Conectar antes de enviar el mensaje
+            conectar();
             try {
                 outputStream.writeObject(mensaje);
                 System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                desconectar(); // Desconectar después de enviar el mensaje
+                desconectar();
             }
         } else {
             System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
         }
     }
 
-    public static void main(String[] args) {
-        // Crear instancias de Usuario leyendo el archivo de texto
-        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
-
-        // Enviar mensajes de prueba
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.println("Escribe el mensaje (destinatario-mensaje):");
-            String entrada = scanner.nextLine();
-
-            // Dividir la entrada en destinatario y mensaje
-            String[] partes = entrada.split("-");
-            if (partes.length == 2) {
-                String destinatario = partes[0].trim();
-                String textoMensaje = partes[1].trim();
-
-                Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
-                usuarios.get(0).enviarMensaje(mensaje); // Enviamos el mensaje desde el primer usuario para simplificar
-            } else {
-                System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
+    private static String obtenerIPPublica() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface current = interfaces.nextElement();
+                if (current.getName().equals("enp1s0") && current.isUp() && !current.isLoopback() && !current.isVirtual()) {
+                    Enumeration<InetAddress> addresses = current.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress currentAddr = addresses.nextElement();
+                        if (currentAddr instanceof Inet4Address) {
+                            return currentAddr.getHostAddress();
+                        }
+                    }
+                }
             }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -126,6 +103,51 @@ public class Usuario {
             e.printStackTrace();
         }
         return usuarios;
+    }
+
+    public static void main(String[] args) {
+        String ipPublica = obtenerIPPublica();
+
+        if (ipPublica != null) {
+            System.out.println("Tu dirección IP pública es: " + ipPublica);
+        } else {
+            System.out.println("No se pudo obtener la dirección IP pública.");
+            return;
+        }
+
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
+
+        int posicion = -1;
+        for (int i = 0; i < usuarios.size(); i++) {
+            if (usuarios.get(i).getDireccionIP().equals(ipPublica)) {
+                posicion = i + 1;
+                break;
+            }
+        }
+
+        if (posicion != -1) {
+            System.out.println("Hola, soy " + usuarios.get(posicion - 1).getNombre() +
+                    " y estoy en la posición " + posicion + " en la topografía.");
+        } else {
+            System.out.println("No se encontró la posición en la topografía.");
+        }
+
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("Escribe el mensaje (destinatario-mensaje):");
+            String entrada = scanner.nextLine();
+
+            String[] partes = entrada.split("-");
+            if (partes.length == 2) {
+                String destinatario = partes[0].trim();
+                String textoMensaje = partes[1].trim();
+
+                Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
+                usuarios.get(0).enviarMensaje(mensaje);
+            } else {
+                System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
+            }
+        }
     }
 }
 
@@ -147,7 +169,6 @@ class Mensaje implements Serializable {
     }
 
     public String getRemitente() {
-        // Puedes ajustar esto según tus necesidades
         return "REMITENTE";
     }
 }
