@@ -76,10 +76,16 @@ public class Usuario {
     private Usuario encontrarVecinoMasCercano(String destino) {
         Usuario vecinoMasCercano = null;
         int distanciaMasCercana = Integer.MAX_VALUE;
-
+        Usuario temp = null;
+        for (Usuario i: Usuarios
+             ) {
+            if (i.nombre.equals(destino)){
+                temp = i;
+            }
+        }
         for (Usuario vecino : vecinos) {
             if (!vecino.getNombre().equals(nombre)) {
-                int distancia = Math.abs(Usuarios.indexOf(vecino) - Usuarios.indexOf(this));
+                int distancia = Math.abs(Usuarios.indexOf(vecino) - Usuarios.indexOf(temp));
                 if (distancia < distanciaMasCercana) {
                     distanciaMasCercana = distancia;
                     vecinoMasCercano = vecino;
@@ -156,7 +162,7 @@ public class Usuario {
             return;
         }
 
-        Usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
+        Usuarios = leerUsuariosDesdeArchivo("/home/jorge/Escritorio/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
 
         int posicion = -1;
         for (int i = 0; i < Usuarios.size(); i++) {
@@ -240,11 +246,10 @@ public class Usuario {
 
                 for (Usuario i: Usuarios
                      ) {
-                    if (Objects.equals(i.direccionIP, ipPublica)){
+                    if (Objects.equals(i.direccionIP, ipPublica)) {
                         i.enviarMensaje(mensaje);
                     }
                 }
-                break;
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
