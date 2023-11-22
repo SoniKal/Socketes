@@ -4,144 +4,167 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Usuario {
     private String nombre;
-    private String ip;
-    private Usuario usuarioSiguiente;
+    private String direccionIP;
+    private Socket socket;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
 
-    public Usuario(String nombre, String ip) {
+    public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
-        this.ip = ip;
-    }
+        this.direccionIP = direccionIP;
 
-    public String getNombre() {
-        return nombre;
-    }
+        // Cada usuario actúa como servidor en un hilo separado
+        new Thread(this::iniciarServidor).start();
 
-    public String getIp() {
-        return ip;
-    }
-
-    public void setUsuarioSiguiente(Usuario usuarioSiguiente) {
-        this.usuarioSiguiente = usuarioSiguiente;
-    }
-
-    public void imprimirVecinos() {
-        System.out.println("Vecinos de " + nombre + ":");
-        if (usuarioSiguiente != null) {
-            System.out.println("  Nombre: " + usuarioSiguiente.nombre + ", IP: " + usuarioSiguiente.ip);
-        }
-    }
-
-    public void enviarMensaje(String mensaje, String destinoIp) {
-        Mensaje nuevoMensaje = new Mensaje(mensaje, destinoIp);
-
-        try (Socket socket = new Socket(destinoIp, 12345);
-             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream())) {
-
-            out.writeObject(nuevoMensaje);
-
+        // Establecer conexión como cliente
+        try {
+            socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void recibirMensaje(Mensaje mensaje) {
-        if (ip.equals(mensaje.getDestino())) {
-            System.out.println("Mensaje recibido para " + nombre + ": " + mensaje.getTexto());
-        } else {
-            System.out.println("Reenviando mensaje...");
-            enviarMensajeAlSiguiente(mensaje);
-        }
-    }
-
-    private void enviarMensajeAlSiguiente(Mensaje mensaje) {
-        if (usuarioSiguiente != null) {
-            usuarioSiguiente.enviarMensaje(mensaje.getTexto(), mensaje.getDestino());
-        }
-    }
-
-    public void iniciar() {
-        imprimirVecinos();
-        try {
-            ServerSocket serverSocket = new ServerSocket(12345);
-            System.out.println("Esperando conexiones en " + ip);
-
+    private void iniciarServidor() {
+        try (ServerSocket serverSocket = new ServerSocket(12345)) {
             while (true) {
-                Socket socket = serverSocket.accept();
-                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+                Socket clientSocket = serverSocket.accept();
+                // Manejar la conexión del nuevo usuario en un hilo separado
+                new Thread(() -> manejarConexion(clientSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-                Mensaje mensaje = (Mensaje) in.readObject();
-                recibirMensaje(mensaje);
+    private void manejarConexion(Socket clientSocket) {
+        try (
+                ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream())
+        ) {
+            // Manejar la conexión con el usuario
+            while (true) {
+                // Esperar un mensaje y mostrarlo
+                Mensaje mensaje = (Mensaje) inputStream.readObject();
+                System.out.println(nombre + " ha recibido un mensaje de " + mensaje.getRemitente() + ": " + mensaje.getTexto());
 
-                in.close();
-                socket.close();
+                // Si este usuario no es el destinatario, reenviar al vecino más cercano
+                if (!nombre.equals(mensaje.getDestinatario())) {
+                    enviarMensajeAlVecinoMasCercano(mensaje);
+                }
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    public void escribirMensajePersonalizado() {
-        Scanner scanner = new Scanner(System.in);
+    private void enviarMensajeAlVecinoMasCercano(Mensaje mensaje) {
+        int indiceDestinatario = -1;
+        int indiceActual = -1;
 
-        System.out.print("Ingrese el nombre del destinatario: ");
-        String nombreDestinatario = scanner.nextLine();
-
-        System.out.print("Ingrese el mensaje: ");
-        String mensaje = scanner.nextLine();
-
-        String ipDestinatario = obtenerIpPorNombre(nombreDestinatario);
-        if (ipDestinatario != null) {
-            enviarMensaje(mensaje, ipDestinatario);
-        } else {
-            System.out.println("El destinatario no existe en la topografía.");
-        }
-    }
-
-    private String obtenerIpPorNombre(String nombre) {
-        for (Usuario usuario : Usuario.listaDeUsuarios) {
-            if (usuario.getNombre().equals(nombre)) {
-                return usuario.getIp();
+        for (int i = 0; i < Topografia.usuarios.size(); i++) {
+            if (Topografia.usuarios.get(i).getNombre().equals(mensaje.getDestinatario())) {
+                indiceDestinatario = i;
+            } else if (Topografia.usuarios.get(i).getNombre().equals(this.nombre)) {
+                indiceActual = i;
             }
         }
-        return null;
+
+        // Enviar mensaje al vecino más cercano al destinatario
+        if (indiceDestinatario != -1 && indiceActual != -1) {
+            int indiceVecino = (indiceDestinatario < indiceActual) ? indiceActual - 1 : indiceActual + 1;
+            if (indiceVecino >= 0 && indiceVecino < Topografia.usuarios.size()) {
+                Topografia.usuarios.get(indiceVecino).enviarMensaje(mensaje);
+            }
+        }
     }
 
-    public static ArrayList<Usuario> listaDeUsuarios = new ArrayList<>();
+    public void enviarMensaje(Mensaje mensaje) {
+        // Determinar si este usuario es el destinatario
+        if (nombre.equals(mensaje.getDestinatario())) {
+            System.out.println("Soy " + nombre + ", este mensaje es para mí: " + mensaje.getTexto());
+        } else {
+            // Enviar el mensaje al vecino más cercano al destinatario
+            enviarMensajeAlVecinoMasCercano(mensaje);
+        }
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+}
+
+class Mensaje implements Serializable {
+    private String texto;
+    private String destinatario;
+
+    public Mensaje(String texto, String destinatario) {
+        this.texto = texto;
+        this.destinatario = destinatario;
+    }
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public String getDestinatario() {
+        return destinatario;
+    }
+
+    public String getRemitente() {
+        // Puedes ajustar esto según tus necesidades
+        return "REMITENTE";
+    }
+}
+
+class Topografia {
+    public static List<Usuario> usuarios = new ArrayList<>();
 
     public static void main(String[] args) {
-        leerTopografia();
-        establecerVecinos();
+        // Crear instancias de Usuario leyendo el archivo de texto
+        usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
 
-        Usuario usuarioActual = listaDeUsuarios.get(0);
+        // Enviar mensajes de prueba
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.println("Escribe el mensaje (destinatario-mensaje):");
+            String entrada = scanner.nextLine();
 
-        new Thread(() -> usuarioActual.iniciar()).start();
-        new Thread(() -> usuarioActual.escribirMensajePersonalizado()).start();
+            // Dividir la entrada en destinatario y mensaje
+            String[] partes = entrada.split("-");
+            if (partes.length == 2) {
+                String destinatario = partes[0].trim();
+                String textoMensaje = partes[1].trim();
+
+                Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
+                usuarios.get(0).enviarMensaje(mensaje); // Enviamos el mensaje desde el primer usuario para simplificar
+            } else {
+                System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
+            }
+        }
     }
 
-    private static void leerTopografia() {
-        try (BufferedReader br = new BufferedReader(new FileReader("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"))) {
+    private static List<Usuario> leerUsuariosDesdeArchivo(String rutaArchivo) {
+        List<Usuario> usuarios = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] partes = linea.split(":");
-                listaDeUsuarios.add(new Usuario(partes[0], partes[1]));
+                if (partes.length == 2) {
+                    String nombre = partes[0].trim().replace("\"", "");
+                    String direccionIP = partes[1].trim().replace("\"", "");
+                    usuarios.add(new Usuario(nombre, direccionIP));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static void establecerVecinos() {
-        int totalUsuarios = Usuario.listaDeUsuarios.size();
-
-        for (int i = 0; i < totalUsuarios - 1; i++) {
-            Usuario actual = Usuario.listaDeUsuarios.get(i);
-            Usuario siguiente = Usuario.listaDeUsuarios.get(i + 1);
-            actual.setUsuarioSiguiente(siguiente);
-        }
+        return usuarios;
     }
 }
-
