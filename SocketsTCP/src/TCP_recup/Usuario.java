@@ -35,10 +35,8 @@ public class Usuario {
             System.out.println(nombre + " se ha conectado.");
         } catch (ConnectException e) {
             System.out.println("Error al conectar: La conexión fue rechazada. Asegúrate de que el destinatario esté ejecutando el programa y escuchando en el puerto correcto.");
-            e.printStackTrace();
         } catch (IOException e) {
             System.out.println("Error al conectar: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -49,7 +47,6 @@ public class Usuario {
                 System.out.println(nombre + " se ha desconectado.");
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -66,7 +63,6 @@ public class Usuario {
                 }
             } catch (IOException e) {
                 System.out.println("Error al enviar el mensaje: " + e.getMessage());
-                e.printStackTrace();
             }
         } else {
             System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
@@ -127,7 +123,6 @@ public class Usuario {
             }
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -146,7 +141,6 @@ public class Usuario {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return vecinos;
     }
@@ -222,12 +216,10 @@ public class Usuario {
                                 }
                             }
                         } catch (IOException | ClassNotFoundException e) {
-                            e.printStackTrace();
                         }
                     }).start();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
             }
         }).start();
 
