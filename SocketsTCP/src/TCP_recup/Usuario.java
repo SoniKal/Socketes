@@ -17,15 +17,25 @@ public class Usuario {
     public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
         this.direccionIP = direccionIP;
+    }
 
-        // Cada usuario actúa como servidor en un hilo separado
-        new Thread(this::iniciarServidor).start();
-
-        // Establecer conexión como cliente
+    public void conectar() {
         try {
             socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
+            System.out.println(nombre + " se ha conectado.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void desconectar() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+                System.out.println(nombre + " se ha desconectado.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -53,82 +63,27 @@ public class Usuario {
                 // Esperar un mensaje y mostrarlo
                 Mensaje mensaje = (Mensaje) inputStream.readObject();
                 System.out.println(nombre + " ha recibido un mensaje de " + mensaje.getRemitente() + ": " + mensaje.getTexto());
-
-                // Si este usuario no es el destinatario, reenviar al vecino más cercano
-                if (!nombre.equals(mensaje.getDestinatario())) {
-                    enviarMensajeAlVecinoMasCercano(mensaje);
-                }
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private void enviarMensajeAlVecinoMasCercano(Mensaje mensaje) {
-        int indiceDestinatario = -1;
-        int indiceActual = -1;
-
-        for (int i = 0; i < Topografia.usuarios.size(); i++) {
-            if (Topografia.usuarios.get(i).getNombre().equals(mensaje.getDestinatario())) {
-                indiceDestinatario = i;
-            } else if (Topografia.usuarios.get(i).getNombre().equals(this.nombre)) {
-                indiceActual = i;
-            }
-        }
-
-        // Enviar mensaje al vecino más cercano al destinatario
-        if (indiceDestinatario != -1 && indiceActual != -1) {
-            int indiceVecino = (indiceDestinatario < indiceActual) ? indiceActual - 1 : indiceActual + 1;
-            if (indiceVecino >= 0 && indiceVecino < Topografia.usuarios.size()) {
-                Topografia.usuarios.get(indiceVecino).enviarMensaje(mensaje);
-            }
-        }
-    }
-
     public void enviarMensaje(Mensaje mensaje) {
-        // Determinar si este usuario es el destinatario
-        if (nombre.equals(mensaje.getDestinatario())) {
-            System.out.println("Soy " + nombre + ", este mensaje es para mí: " + mensaje.getTexto());
-        } else {
-            // Enviar el mensaje al vecino más cercano al destinatario
-            enviarMensajeAlVecinoMasCercano(mensaje);
+        conectar(); // Conectar antes de enviar el mensaje
+        try {
+            outputStream.writeObject(mensaje);
+            System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            desconectar(); // Desconectar después de enviar el mensaje
         }
     }
-
-    public String getNombre() {
-        return nombre;
-    }
-}
-
-class Mensaje implements Serializable {
-    private String texto;
-    private String destinatario;
-
-    public Mensaje(String texto, String destinatario) {
-        this.texto = texto;
-        this.destinatario = destinatario;
-    }
-
-    public String getTexto() {
-        return texto;
-    }
-
-    public String getDestinatario() {
-        return destinatario;
-    }
-
-    public String getRemitente() {
-        // Puedes ajustar esto según tus necesidades
-        return "REMITENTE";
-    }
-}
-
-class Topografia {
-    public static List<Usuario> usuarios = new ArrayList<>();
 
     public static void main(String[] args) {
         // Crear instancias de Usuario leyendo el archivo de texto
-        usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("ruta/del/archivo.txt");
 
         // Enviar mensajes de prueba
         Scanner scanner = new Scanner(System.in);
@@ -166,5 +121,28 @@ class Topografia {
             e.printStackTrace();
         }
         return usuarios;
+    }
+}
+
+class Mensaje implements Serializable {
+    private String texto;
+    private String destinatario;
+
+    public Mensaje(String texto, String destinatario) {
+        this.texto = texto;
+        this.destinatario = destinatario;
+    }
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public String getDestinatario() {
+        return destinatario;
+    }
+
+    public String getRemitente() {
+        // Puedes ajustar esto según tus necesidades
+        return "REMITENTE";
     }
 }
