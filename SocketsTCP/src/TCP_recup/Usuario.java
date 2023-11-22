@@ -77,7 +77,7 @@ public class Usuario {
         int distanciaMasCercana = Integer.MAX_VALUE;
 
         for (Usuario vecino : usuarios) {
-            if (!vecino.getNombre().equals(nombre) && !vecino.getNombre().equals(destino)) {
+            if (!vecino.getNombre().equals(nombre)) {
                 int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(this));
                 if (distancia < distanciaMasCercana) {
                     distanciaMasCercana = distancia;
@@ -228,6 +228,7 @@ public class Usuario {
                         i.enviarMensaje(mensaje);
                     }
                 }
+                break;
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
