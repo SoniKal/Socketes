@@ -99,7 +99,7 @@ public class Usuario {
             Usuario vecinoMasCercano = encontrarVecinoMasCercano(mensaje.getDestinatario());
             if (vecinoMasCercano != null) {
                 System.out.println(nombre + " reenviando mensaje a " + vecinoMasCercano.getNombre());
-                vecinoMasCercano.enviarMensaje(mensaje);
+                this.enviarMensaje(mensaje);
             } else {
                 System.out.println("No se encontró un vecino para reenviar el mensaje.");
             }
@@ -156,7 +156,7 @@ public class Usuario {
             return;
         }
 
-        Usuarios = leerUsuariosDesdeArchivo("/home/jorge/Escritorio/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
+        Usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
 
         int posicion = -1;
         for (int i = 0; i < Usuarios.size(); i++) {
