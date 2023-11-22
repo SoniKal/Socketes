@@ -70,14 +70,19 @@ public class Usuario {
     }
 
     public void enviarMensaje(Mensaje mensaje) {
-        conectar(); // Conectar antes de enviar el mensaje
-        try {
-            outputStream.writeObject(mensaje);
-            System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            desconectar(); // Desconectar después de enviar el mensaje
+        // Si el destinatario es el mismo que el remitente, no es necesario conectarse
+        if (!nombre.equals(mensaje.getDestinatario())) {
+            conectar(); // Conectar antes de enviar el mensaje
+            try {
+                outputStream.writeObject(mensaje);
+                System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                desconectar(); // Desconectar después de enviar el mensaje
+            }
+        } else {
+            System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
         }
     }
 
