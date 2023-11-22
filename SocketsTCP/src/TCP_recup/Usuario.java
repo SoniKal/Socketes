@@ -223,7 +223,13 @@ public class Usuario {
                 String textoMensaje = partes[1].trim();
 
                 Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
-                usuarios.get(0).enviarMensaje(mensaje);
+
+                for (Usuario i:usuarios
+                     ) {
+                    if (i.direccionIP == ipPublica){
+                        i.enviarMensaje(mensaje);
+                    }
+                }
                 break; // Salir del bucle después de enviar el mensaje
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
