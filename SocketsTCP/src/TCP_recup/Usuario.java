@@ -1,3 +1,5 @@
+package TCP_recup;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -8,8 +10,9 @@ import java.util.Scanner;
 public class Usuario {
     private String nombre;
     private String direccionIP;
-    private ServerSocket serverSocket;
     private Socket socket;
+
+    private ServerSocket serverSocket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
 
@@ -28,12 +31,24 @@ public class Usuario {
 
     public void iniciarServidor() {
         try {
-            serverSocket = new ServerSocket(12345); // 12345 es el puerto de comunicación
-            System.out.println(nombre + " está esperando conexiones en el puerto 12345...");
-            socket = serverSocket.accept(); // Espera a que se conecte un cliente
-            System.out.println(nombre + " se ha conectado a " + socket.getInetAddress());
+            serverSocket = new ServerSocket(12345); // Puerto de escucha
+            System.out.println(nombre + " está esperando a que se conecte otro usuario...");
+            socket = serverSocket.accept(); // Bloquea hasta que se conecta otro usuario
+            System.out.println(nombre + " se ha conectado con éxito.");
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            System.out.println("Error al iniciar el servidor: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void conectar() {
+        try {
+            socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
+            System.out.println(nombre + " se ha conectado.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -45,10 +60,6 @@ public class Usuario {
                 socket.close();
                 System.out.println(nombre + " se ha desconectado.");
             }
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-                System.out.println(nombre + " ha cerrado el servidor.");
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -58,15 +69,14 @@ public class Usuario {
         if (!nombre.equals(mensaje.getDestinatario())) {
             try {
                 conectar();
-                if (socket != null && socket.isConnected()) {
+                if (socket != null) {
                     outputStream.writeObject(mensaje);
                     System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
                 } else {
-                    System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
+                    System.out.println("No se pudo establecer la conexión. El socket es nulo.");
                 }
             } catch (IOException e) {
                 System.out.println("Error al enviar el mensaje: " + e.getMessage());
-                e.printStackTrace();
             } finally {
                 desconectar();
             }
@@ -116,15 +126,20 @@ public class Usuario {
     }
 
     public static void main(String[] args) {
-        Usuario usuario = new Usuario("JUAN", obtenerIPInterfaz());
+        String ipPublica = obtenerIPInterfaz();
 
-        usuario.iniciarServidor(); // Iniciar el servidor para aceptar conexiones entrantes
+        if (ipPublica != null) {
+            System.out.println("La dirección IP de la interfaz es: " + ipPublica);
+        } else {
+            System.out.println("No se pudo obtener la dirección IP de la interfaz.");
+            return;
+        }
 
-        List<Usuario> usuarios = leerUsuariosDesdeArchivo("ruta/del/archivo.txt");
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
 
         int posicion = -1;
         for (int i = 0; i < usuarios.size(); i++) {
-            if (usuarios.get(i).getDireccionIP().equals(usuario.getDireccionIP())) {
+            if (usuarios.get(i).getDireccionIP().equals(ipPublica)) {
                 posicion = i + 1;
                 break;
             }
@@ -133,12 +148,13 @@ public class Usuario {
         if (posicion != -1) {
             System.out.println("Hola, soy " + usuarios.get(posicion - 1).getNombre() +
                     " y estoy en la posición " + posicion + " en la topografía.");
+                    usuarios.get(posicion - 1).iniciarServidor();
         } else {
             System.out.println("No se encontró la posición en la topografía.");
         }
-
         Scanner scanner = new Scanner(System.in);
         while (true) {
+
             System.out.println("Escribe el mensaje (destinatario-mensaje):");
             String entrada = scanner.nextLine();
 
@@ -148,7 +164,7 @@ public class Usuario {
                 String textoMensaje = partes[1].trim();
 
                 Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
-                usuario.enviarMensaje(mensaje);
+                usuarios.get(0).enviarMensaje(mensaje);
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
@@ -171,5 +187,9 @@ class Mensaje implements Serializable {
 
     public String getDestinatario() {
         return destinatario;
+    }
+
+    public String getRemitente() {
+        return "REMITENTE";
     }
 }
