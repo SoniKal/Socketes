@@ -28,8 +28,7 @@ public class Usuario {
 
     public void conectar(Mensaje M) {
         try {
-            encontrarVecinoMasCercano(M.getDestinatario());
-            socket = new Socket(M.getDestinatario(), 12345);
+            socket = new Socket(encontrarVecinoMasCercano(M.getDestinatario()).direccionIP, 12345);
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println(nombre + " se ha conectado.");
@@ -77,7 +76,7 @@ public class Usuario {
         Usuario vecinoMasCercano = null;
         int distanciaMasCercana = Integer.MAX_VALUE;
 
-        for (Usuario vecino : Usuarios) {
+        for (Usuario vecino : vecinos) {
             if (!vecino.getNombre().equals(nombre)) {
                 int distancia = Math.abs(Usuarios.indexOf(vecino) - Usuarios.indexOf(this));
                 if (distancia < distanciaMasCercana) {
