@@ -11,8 +11,6 @@ public class Usuario {
     private String nombre;
     private String direccionIP;
     private Socket socket;
-
-    private ServerSocket serverSocket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
 
@@ -29,27 +27,17 @@ public class Usuario {
         return direccionIP;
     }
 
-    public void iniciarServidor() {
-        try {
-            serverSocket = new ServerSocket(12345); // Puerto de escucha
-            System.out.println(nombre + " está esperando a que se conecte otro usuario...");
-            socket = serverSocket.accept(); // Bloquea hasta que se conecta otro usuario
-            System.out.println(nombre + " se ha conectado con éxito.");
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-            inputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            System.out.println("Error al iniciar el servidor: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     public void conectar() {
         try {
             socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println(nombre + " se ha conectado.");
+        } catch (ConnectException e) {
+            System.out.println("Error al conectar: La conexión fue rechazada. Asegúrate de que el destinatario esté ejecutando el programa y escuchando en el puerto correcto.");
+            e.printStackTrace();
         } catch (IOException e) {
+            System.out.println("Error al conectar: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -69,16 +57,17 @@ public class Usuario {
         if (!nombre.equals(mensaje.getDestinatario())) {
             try {
                 conectar();
-                if (socket != null) {
+                if (socket != null && socket.isConnected()) {
                     outputStream.writeObject(mensaje);
                     System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
                 } else {
-                    System.out.println("No se pudo establecer la conexión. El socket es nulo.");
+                    System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
                 }
             } catch (IOException e) {
                 System.out.println("Error al enviar el mensaje: " + e.getMessage());
+                e.printStackTrace();
             } finally {
-                desconectar();
+                // No desconectamos aquí para permitir que el cliente siga enviando mensajes
             }
         } else {
             System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
@@ -148,13 +137,40 @@ public class Usuario {
         if (posicion != -1) {
             System.out.println("Hola, soy " + usuarios.get(posicion - 1).getNombre() +
                     " y estoy en la posición " + posicion + " en la topografía.");
-                    usuarios.get(posicion - 1).iniciarServidor();
         } else {
             System.out.println("No se encontró la posición en la topografía.");
+            return;
         }
+
+        // Inicia un thread para la escucha continua del servidor
+        new Thread(() -> {
+            try {
+                ServerSocket serverSocket = new ServerSocket(12345); // 12345 es el puerto de escucha
+                System.out.println("Esperando a que se conecte otro usuario...");
+                Socket clienteSocket = serverSocket.accept();
+                System.out.println("¡Usuario conectado!");
+
+                // Manejar la comunicación con el usuario conectado en otro thread
+                new Thread(() -> {
+                    try {
+                        ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
+                        while (true) {
+                            Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
+                            System.out.println("Mensaje recibido de " + mensajeRecibido.getRemitente() +
+                                    ": " + mensajeRecibido.getTexto());
+                        }
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        // El usuario principal puede enviar mensajes a otros usuarios
         Scanner scanner = new Scanner(System.in);
         while (true) {
-
             System.out.println("Escribe el mensaje (destinatario-mensaje):");
             String entrada = scanner.nextLine();
 
