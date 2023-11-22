@@ -1,5 +1,3 @@
-package TCP_recup;
-
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -10,6 +8,7 @@ import java.util.Scanner;
 public class Usuario {
     private String nombre;
     private String direccionIP;
+    private ServerSocket serverSocket;
     private Socket socket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
@@ -27,12 +26,14 @@ public class Usuario {
         return direccionIP;
     }
 
-    public void conectar() {
+    public void iniciarServidor() {
         try {
-            socket = new Socket(direccionIP, 12345); // 12345 es el puerto de comunicación
+            serverSocket = new ServerSocket(12345); // 12345 es el puerto de comunicación
+            System.out.println(nombre + " está esperando conexiones en el puerto 12345...");
+            socket = serverSocket.accept(); // Espera a que se conecte un cliente
+            System.out.println(nombre + " se ha conectado a " + socket.getInetAddress());
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             inputStream = new ObjectInputStream(socket.getInputStream());
-            System.out.println(nombre + " se ha conectado.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,6 +45,10 @@ public class Usuario {
                 socket.close();
                 System.out.println(nombre + " se ha desconectado.");
             }
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+                System.out.println(nombre + " ha cerrado el servidor.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -53,14 +58,15 @@ public class Usuario {
         if (!nombre.equals(mensaje.getDestinatario())) {
             try {
                 conectar();
-                if (socket != null) {
+                if (socket != null && socket.isConnected()) {
                     outputStream.writeObject(mensaje);
                     System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
                 } else {
-                    System.out.println("No se pudo establecer la conexión. El socket es nulo.");
+                    System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
                 }
             } catch (IOException e) {
                 System.out.println("Error al enviar el mensaje: " + e.getMessage());
+                e.printStackTrace();
             } finally {
                 desconectar();
             }
@@ -110,20 +116,15 @@ public class Usuario {
     }
 
     public static void main(String[] args) {
-        String ipPublica = obtenerIPInterfaz();
+        Usuario usuario = new Usuario("JUAN", obtenerIPInterfaz());
 
-        if (ipPublica != null) {
-            System.out.println("La dirección IP de la interfaz es: " + ipPublica);
-        } else {
-            System.out.println("No se pudo obtener la dirección IP de la interfaz.");
-            return;
-        }
+        usuario.iniciarServidor(); // Iniciar el servidor para aceptar conexiones entrantes
 
-        List<Usuario> usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo");
+        List<Usuario> usuarios = leerUsuariosDesdeArchivo("ruta/del/archivo.txt");
 
         int posicion = -1;
         for (int i = 0; i < usuarios.size(); i++) {
-            if (usuarios.get(i).getDireccionIP().equals(ipPublica)) {
+            if (usuarios.get(i).getDireccionIP().equals(usuario.getDireccionIP())) {
                 posicion = i + 1;
                 break;
             }
@@ -147,7 +148,7 @@ public class Usuario {
                 String textoMensaje = partes[1].trim();
 
                 Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
-                usuarios.get(0).enviarMensaje(mensaje);
+                usuario.enviarMensaje(mensaje);
             } else {
                 System.out.println("Formato incorrecto. Debe ser 'destinatario-mensaje'.");
             }
@@ -170,9 +171,5 @@ class Mensaje implements Serializable {
 
     public String getDestinatario() {
         return destinatario;
-    }
-
-    public String getRemitente() {
-        return "REMITENTE";
     }
 }
