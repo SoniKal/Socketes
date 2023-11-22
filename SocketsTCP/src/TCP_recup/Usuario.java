@@ -2,10 +2,7 @@ package TCP_recup;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Usuario {
     private String nombre;
@@ -226,7 +223,7 @@ public class Usuario {
 
                 for (Usuario i:usuarios
                      ) {
-                    if (i.direccionIP == ipPublica){
+                    if (Objects.equals(i.direccionIP, ipPublica)){
                         i.enviarMensaje(mensaje);
                     }
                 }
