@@ -176,8 +176,8 @@ public class Usuario {
         }
 
         // Después de que se conectan al menos dos usuarios, se muestra la topografía
-        for (int i = 0; i< Usuarios.size()-1; i++)
-            if(Usuarios.get(i+1).direccionIP.equals(ipPublica) && i != 3 || i != 0 && Usuarios.get(i-1).direccionIP.equals(ipPublica)){
+        for (int i = 0; i< Usuarios.size(); i++)
+            if(i+1 != 4 && Usuarios.get(i+1).direccionIP.equals(ipPublica)  || i != 0 && Usuarios.get(i-1).direccionIP.equals(ipPublica)){
                 vecinos.add(Usuarios.get(i));
             }
 
