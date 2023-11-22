@@ -10,7 +10,8 @@ public class Usuario {
     private Socket socket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
-    private static List<Usuario> usuarios = new ArrayList<>();
+    private static List<Usuario> Usuarios = new ArrayList<>();
+    private static List<Usuario> vecinos = new ArrayList<>();
 
     public Usuario(String nombre, String direccionIP) {
         this.nombre = nombre;
@@ -76,9 +77,9 @@ public class Usuario {
         Usuario vecinoMasCercano = null;
         int distanciaMasCercana = Integer.MAX_VALUE;
 
-        for (Usuario vecino : usuarios) {
+        for (Usuario vecino : Usuarios) {
             if (!vecino.getNombre().equals(nombre)) {
-                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(this));
+                int distancia = Math.abs(Usuarios.indexOf(vecino) - Usuarios.indexOf(this));
                 if (distancia < distanciaMasCercana) {
                     distanciaMasCercana = distancia;
                     vecinoMasCercano = vecino;
@@ -91,7 +92,7 @@ public class Usuario {
 
     public void recibirMensaje(Mensaje mensaje) {
         if (nombre.equals(mensaje.getDestinatario())) {
-            System.out.println("Mensaje recibido de " + mensaje.getRemitente() + ": " + mensaje.getTexto());
+            System.out.println("Mensaje recibido: " + mensaje.getTexto());
         } else {
             Usuario vecinoMasCercano = encontrarVecinoMasCercano(mensaje.getDestinatario());
             if (vecinoMasCercano != null) {
@@ -127,7 +128,7 @@ public class Usuario {
 
 
     private static List<Usuario> leerUsuariosDesdeArchivo(String rutaArchivo) {
-        List<Usuario> usuarios = new ArrayList<>();
+        List<Usuario> vecinos = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = br.readLine()) != null) {
@@ -135,13 +136,13 @@ public class Usuario {
                 if (partes.length == 2) {
                     String nombre = partes[0].trim().replace("\"", "");
                     String direccionIP = partes[1].trim().replace("\"", "");
-                    usuarios.add(new Usuario(nombre, direccionIP));
+                    vecinos.add(new Usuario(nombre, direccionIP));
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return usuarios;
+        return vecinos;
     }
 
 
@@ -155,18 +156,19 @@ public class Usuario {
             return;
         }
 
-        usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
+        Usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
 
         int posicion = -1;
-        for (int i = 0; i < usuarios.size(); i++) {
-            if (usuarios.get(i).getDireccionIP().equals(ipPublica)) {
+        for (int i = 0; i < Usuarios.size(); i++) {
+            if (Usuarios.get(i).getDireccionIP().equals(ipPublica)) {
                 posicion = i + 1;
                 break;
             }
         }
 
+
         if (posicion != -1) {
-            System.out.println("Hola, soy " + usuarios.get(posicion - 1).getNombre() +
+            System.out.println("Hola, soy " + Usuarios.get(posicion - 1).getNombre() +
                     " y estoy en la posición " + posicion + " en la topografía.");
         } else {
             System.out.println("No se encontró la posición en la topografía.");
@@ -179,7 +181,7 @@ public class Usuario {
                 ServerSocket serverSocket = new ServerSocket(12345);
                 System.out.println("Esperando a que se conecten otros usuarios...");
 
-                while (usuarios.size() < 2) {
+                while (Usuarios.size() < 2) {
                     Socket clienteSocket = serverSocket.accept();
                     System.out.println("¡Usuario conectado!");
 
@@ -190,7 +192,12 @@ public class Usuario {
                         try {
                             while (true) {
                                 Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
-                                usuarios.get(0).recibirMensaje(mensajeRecibido);
+                                for (Usuario i: Usuarios
+                                     ) {
+                                    if (i.direccionIP.equals(ipPublica)){
+                                        i.recibirMensaje(mensajeRecibido);
+                                    }
+                                }
                             }
                         } catch (IOException | ClassNotFoundException e) {
                             e.printStackTrace();
@@ -199,11 +206,20 @@ public class Usuario {
                 }
 
                 // Después de que se conectan al menos dos usuarios, se muestra la topografía
+                for (int i = 0; i< Usuarios.size()-1; i++)
+                    if(Usuarios.get(i+1).direccionIP.equals(ipPublica) && i != 3 || i != 0 && Usuarios.get(i-1).direccionIP.equals(ipPublica)){
+                       vecinos.add(Usuarios.get(i));
+                    }
+
                 System.out.println("Topografía de la red:");
-                for (Usuario usuario : usuarios) {
+                for (Usuario usuario : Usuarios) {
                     System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
                 }
 
+                System.out.println("vecinos: ");
+                for (Usuario usuario : vecinos) {
+                    System.out.println(usuario.getNombre() + " - " + usuario.getDireccionIP());
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -222,7 +238,7 @@ public class Usuario {
 
                 Mensaje mensaje = new Mensaje(textoMensaje, destinatario);
 
-                for (Usuario i:usuarios
+                for (Usuario i: Usuarios
                      ) {
                     if (Objects.equals(i.direccionIP, ipPublica)){
                         i.enviarMensaje(mensaje);
@@ -239,7 +255,6 @@ public class Usuario {
 class Mensaje implements Serializable {
     private String texto;
     private String destinatario;
-    private String remitente; // Se agrega el remitente al mensaje
 
     public Mensaje(String texto, String destinatario) {
         this.texto = texto;
@@ -254,11 +269,4 @@ class Mensaje implements Serializable {
         return destinatario;
     }
 
-    public String getRemitente() {
-        return remitente;
-    }
-
-    public void setRemitente(String remitente) {
-        this.remitente = remitente;
-    }
 }
