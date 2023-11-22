@@ -51,12 +51,16 @@ public class Usuario {
 
     public void enviarMensaje(Mensaje mensaje) {
         if (!nombre.equals(mensaje.getDestinatario())) {
-            conectar();
             try {
-                outputStream.writeObject(mensaje);
-                System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
+                conectar();
+                if (socket != null) {
+                    outputStream.writeObject(mensaje);
+                    System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
+                } else {
+                    System.out.println("No se pudo establecer la conexión. El socket es nulo.");
+                }
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("Error al enviar el mensaje: " + e.getMessage());
             } finally {
                 desconectar();
             }
@@ -65,7 +69,7 @@ public class Usuario {
         }
     }
 
-    private static String obtenerIPPublica() {
+    private static String obtenerIPInterfaz() {
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
@@ -106,12 +110,12 @@ public class Usuario {
     }
 
     public static void main(String[] args) {
-        String ipPublica = obtenerIPPublica();
+        String ipPublica = obtenerIPInterfaz();
 
         if (ipPublica != null) {
-            System.out.println("Tu dirección IP pública es: " + ipPublica);
+            System.out.println("La dirección IP de la interfaz es: " + ipPublica);
         } else {
-            System.out.println("No se pudo obtener la dirección IP pública.");
+            System.out.println("No se pudo obtener la dirección IP de la interfaz.");
             return;
         }
 
