@@ -140,4 +140,38 @@ public class Usuario {
             return null;
         }
     }
+
+    public void recibir(Mensaje mensaje) {
+        if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
+            System.out.println("Mensaje de "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
+        } else {
+            Usuario vecinoMasCercano = encontrarVecinoMasCercano(mensaje.getUsuarioDestino());
+            if (vecinoMasCercano != null) {
+                System.out.println(nombreUsuario + " reenviando mensaje a " + vecinoMasCercano.getNombre());
+                this.enviar(mensaje);
+            } else {
+                System.out.println("No se encontró un vecino para reenviar el mensaje.");
+            }
+        }
+    }
+
+    public void enviar(Mensaje mensaje) {
+        if (!nombre.equals(mensaje.getDestinatario())) {
+            try {
+                conectar(mensaje);
+                if (socket != null && socket.isConnected()) {
+                    outputStream.writeObject(mensaje);
+                    System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
+                    desconectar(); // Desconectar después de enviar el mensaje
+                } else {
+                    System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
+                }
+            } catch (IOException e) {
+                System.out.println("Error al enviar el mensaje: " + e.getMessage());
+            }
+        } else {
+            System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
+        }
+    }
+
 }

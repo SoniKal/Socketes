@@ -1,4 +1,7 @@
 package Extra_Dimeglio;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -42,5 +45,35 @@ public class Main {
             System.err.println("[POSICION NO ENCONTRADA]");
             return;
         }
+
+        new Thread(() -> {
+            try {
+                ServerSocket serverSocket = new ServerSocket(12345);
+                System.out.println("Esperando a que se conecten otros usuarios...");
+
+                while (true) {
+                    Socket clienteSocket = serverSocket.accept();
+                    System.out.println("¡Usuario conectado!");
+
+                    ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
+
+                    new Thread(() -> {
+                        try {
+                            while (true) {
+                                Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
+                                for (Usuario i: usuario.getUsuarios()
+                                ) {
+                                    if (i.getDireccionIP().equals(publica)){
+                                        i.recibir(mensajeRecibido);
+                                    }
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException ignored) {
+                        }
+                    }).start();
+                }
+            } catch (IOException ignored) {
+            }
+        }).start();
     }
 }
