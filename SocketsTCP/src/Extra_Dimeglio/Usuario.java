@@ -1,5 +1,4 @@
 package Extra_Dimeglio;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -11,7 +10,8 @@ public class Usuario {
     private Socket socket;
     private ObjectOutputStream output;
     private ObjectInputStream input;
-    private ArrayList<Usuario> usuarios = new ArrayList<>();
+    private ArrayList<Usuario>usuarios = new ArrayList<>();
+    private ArrayList<Usuario>companeros = new ArrayList<>();
 
     public Usuario(String n, String ip, String p) {
         nombreUsuario = n;
@@ -78,43 +78,43 @@ public class Usuario {
         this.usuarios = usuarios;
     }
 
-    public void conectado(Mensaje mensaje) {
+    public ArrayList<Usuario> getCompaneros() {
+        return companeros;
+    }
+
+    public void setCompaneros(ArrayList<Usuario> companeros) {
+        this.companeros = companeros;
+    }
+
+    public void conectado(Mensaje mensaje) throws IOException {
         try {
             socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 12345);
             output = new ObjectOutputStream(socket.getOutputStream());
             input = new ObjectInputStream(socket.getInputStream());
-            System.out.println("[C] " + nombreUsuario + ": CONECTADO");
+            System.out.println("[C] "+nombreUsuario+": CONECTADO");
         } catch (ConnectException e) {
             System.err.println("[E] Error: Error al conectar al usuario destino. Problema de Destino, seguramente...");
         } catch (IOException e) {
             System.err.println("[E] Error: " + e.getMessage());
-        } finally {
-            // Cierra los recursos una vez que hayas terminado
-            try {
-                if (output != null) output.close();
-                if (input != null) input.close();
-                if (socket != null && !socket.isClosed()) socket.close();
-            } catch (IOException ignored) {
-            }
         }
     }
 
-    public void deconectado() {
+    public void deconectado(){
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("[D] " + nombreUsuario + ": DESCONECTADO");
+                System.out.println("[D] "+nombreUsuario+": DESCONECTADO");
             }
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 
-    public Usuario companeroFinder(String destino) {
+    public Usuario companeroFinder(String destino){
         Usuario userReturn = new Usuario();
         int distanciaMasCercana = Integer.MAX_VALUE;
         Usuario temp = null;
-        for (Usuario user : usuarios) {
-            if (user.nombreUsuario.equals(destino)) {
+        for (Usuario user: usuarios)
+        {
+            if (user.nombreUsuario.equals(destino)){
                 temp = user;
             }
         }
@@ -153,12 +153,13 @@ public class Usuario {
             String puerto = partes[2].trim().replace("\"", "");
             return new Usuario(nombre, direccionIP, puerto);
         } else {
-            System.err.println("[LINEA NO CUMPLE CON FORMATO:" + linea + "]");
+            System.err.println("[LINEA NO CUMPLE CON FORMATO:"+ linea+"]");
             return null;
         }
     }
 
     public static String interfazIP() {
+
         try {
             Enumeration<NetworkInterface> interfaz = NetworkInterface.getNetworkInterfaces();
             while (interfaz.hasMoreElements()) {
@@ -181,13 +182,13 @@ public class Usuario {
 
     public void recibir(Mensaje mensaje) {
         if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
-            System.out.println("[M] " + mensaje.getUsuarioOrigen() + ": " + mensaje.getMensaje());
+            System.out.println("[M] "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
         } else {
             Usuario vecinoUser = companeroFinder(mensaje.getUsuarioDestino());
-            if (vecinoUser != null) {
+            if (vecinoUser != null){
                 System.out.println(nombreUsuario + " -- [R] --> " + vecinoUser.getNombreUsuario());
                 this.enviar(mensaje);
-            } else {
+            }else{
                 System.err.println("[USUARIO CERCANO NO ENCONTRADO]");
             }
         }
@@ -208,7 +209,8 @@ public class Usuario {
                 System.err.println("[E] Error Mensaje: " + e.getMessage());
             }
         } else {
-            System.err.println("[E] Error??: No te envíes mensajes");
+            System.err.println("[E] Error??: No te envies mensajes");
         }
     }
+
 }
