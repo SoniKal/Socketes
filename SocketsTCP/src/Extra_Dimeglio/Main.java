@@ -43,6 +43,9 @@ public class Main {
                 System.out.println(z.getNombreUsuario() + ": " + z.getDireccionIP());
             }
             System.out.println("----------------------------------------------------------");
+            System.out.println("[FORMATO]: DESTINO");
+            System.out.println("[FORMATO]: MENSAJE");
+            System.out.println("----------------------------------------------------------");
         } else {
             System.err.println("[POSICION NO ENCONTRADA]");
             return;
@@ -76,10 +79,6 @@ public class Main {
             } catch (IOException ignored) {
             }
         }).start();
-
-        System.out.println("[FORMATO]: DESTINO");
-        System.out.println("[FORMATO]: MENSAJE");
-        System.out.println("----------------------------------------------------------");
 
         while (true) {  //usuario puede enviar mensajes
             String usuarioDest = scanner.nextLine();
