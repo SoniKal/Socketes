@@ -90,16 +90,22 @@ public class Usuario {
         try {
             socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 12345);
             output = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println(nombreUsuario + " se ha conectado.");
+            input = new ObjectInputStream(socket.getInputStream());
+            System.out.println("[C] "+nombreUsuario+": CONECTADO");
         } catch (ConnectException e) {
-            System.out.println("Error al conectar: La conexión fue rechazada. Asegúrate de que el destinatario esté ejecutando el programa y escuchando en el puerto correcto.");
+            System.err.println("[E] Error: Error al conectar al usuario destino. Problema de Destino, seguramente...");
         } catch (IOException e) {
-            System.out.println("Error al conectar: " + e.getMessage());
+            System.err.println("[E] Error: " + e.getMessage());
         }
     }
 
     public void deconectado(){
-
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+                System.out.println("[D] "+nombreUsuario+": DESCONECTADO");
+            }
+        } catch (IOException ignored) {}
     }
 
     public Usuario companeroFinder(String destino){
@@ -194,16 +200,16 @@ public class Usuario {
                 conectado(mensaje);
                 if (socket != null && socket.isConnected()) {
                     output.writeObject(mensaje);
-                    System.out.println(nombreUsuario + " ha enviado un mensaje a " + mensaje.getUsuarioDestino() + ": " + mensaje.getMensaje());
-                    deconectado(); // Desconectar después de enviar el mensaje
+                    System.out.println(nombreUsuario + " -- [R] --> " + mensaje.getUsuarioDestino());
+                    deconectado();
                 } else {
-                    System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
+                    System.err.println("[E] Error: Socket no disponible");
                 }
             } catch (IOException e) {
-                System.out.println("Error al enviar el mensaje: " + e.getMessage());
+                System.err.println("[E] Error Mensaje: " + e.getMessage());
             }
         } else {
-            System.out.println("No es necesario conectarse para enviar un mensaje a uno mismo.");
+            System.err.println("[E] Error??: No te envies mensajes");
         }
     }
 

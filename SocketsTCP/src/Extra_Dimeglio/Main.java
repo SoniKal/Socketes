@@ -79,6 +79,7 @@ public class Main {
 
         System.out.println("[FORMATO]: DESTINO");
         System.out.println("[FORMATO]: MENSAJE");
+        System.out.println("----------------------------------------------------------");
 
         while (true) {  //usuario puede enviar mensajes
             String usuarioDest = scanner.nextLine();
