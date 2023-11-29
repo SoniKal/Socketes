@@ -86,41 +86,43 @@ public class Usuario {
         this.companeros = companeros;
     }
 
-    public void conectado(Mensaje mensaje) throws IOException {
+    public void conectado(Mensaje mensaje) {
         try {
-            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 12345);
+            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 24681);
             output = new ObjectOutputStream(socket.getOutputStream());
-            input = new ObjectInputStream(socket.getInputStream());
-            System.out.println("[C] "+nombreUsuario+": CONECTADO");
+            System.out.println("[C] "+nombreUsuario);
         } catch (ConnectException e) {
-            System.err.println("[E] Error: Error al conectar al usuario destino. Problema de Destino, seguramente...");
+            System.err.println("[E] Error-Conn: Rechazado");
         } catch (IOException e) {
-            System.err.println("[E] Error: " + e.getMessage());
+            System.err.println("[E] Error-Conn: " + e.getMessage());
         }
     }
 
-    public void deconectado(){
+
+
+    public void desconectado() {
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("[D] "+nombreUsuario+": DESCONECTADO");
+                System.out.println("[D] " + nombreUsuario);
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 
-    public Usuario companeroFinder(String destino){
-        Usuario userReturn = new Usuario();
+    private Usuario companeroFinder(String destino){
+        Usuario userReturn = null;
         int distanciaMasCercana = Integer.MAX_VALUE;
-        Usuario temp = null;
+        Usuario temporal = null;
         for (Usuario user: usuarios)
         {
-            if (user.nombreUsuario.equals(destino)){
-                temp = user;
+            if (user.getNombreUsuario().equals(destino)){
+                temporal = user;
             }
         }
-        for (Usuario vecino : usuarios) {
+        for (Usuario vecino : companeros) {
             if (!vecino.getNombreUsuario().equals(nombreUsuario)) {
-                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(temp));
+                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(temporal));
                 if (distancia < distanciaMasCercana) {
                     distanciaMasCercana = distancia;
                     userReturn = vecino;
@@ -139,10 +141,23 @@ public class Usuario {
                     usuarios.add(usuario);
                 }
             }
+            for (int i = 0; i < usuarios.size(); i++) {
+                if (usuarios.get(i).getDireccionIP().equals(this.direccionIP)) {
+                    if (i - 1 >= 0) {
+                        companeros.add(usuarios.get(i - 1));
+                    }
+                    if (i + 1 < usuarios.size()) {
+                        companeros.add(usuarios.get(i + 1));
+                    }
+                    break;
+                }
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     private static Usuario parsearLinea(String linea) {
         String[] partes = linea.split(":");
@@ -182,13 +197,13 @@ public class Usuario {
 
     public void recibir(Mensaje mensaje) {
         if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
-            System.out.println("[M] "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
+            System.out.println("[M] " + mensaje.getUsuarioOrigen() + ": " + mensaje.getMensaje());
         } else {
             Usuario vecinoUser = companeroFinder(mensaje.getUsuarioDestino());
-            if (vecinoUser != null){
+            if (vecinoUser != null) {
                 System.out.println(nombreUsuario + " -- [R] --> " + vecinoUser.getNombreUsuario());
                 this.enviar(mensaje);
-            }else{
+            } else {
                 System.err.println("[USUARIO CERCANO NO ENCONTRADO]");
             }
         }
@@ -201,12 +216,12 @@ public class Usuario {
                 if (socket != null && socket.isConnected()) {
                     output.writeObject(mensaje);
                     System.out.println(nombreUsuario + " -- [R] --> " + mensaje.getUsuarioDestino());
-                    deconectado();
+                    desconectado();
                 } else {
-                    System.err.println("[E] Error: Socket no disponible");
+                    System.err.println("[E] Error-Socket: No disponible");
                 }
             } catch (IOException e) {
-                System.err.println("[E] Error Mensaje: " + e.getMessage());
+                System.err.println("[E] Error-Mensaje: " + e.getMessage());
             }
         } else {
             System.err.println("[E] Error??: No te envies mensajes");

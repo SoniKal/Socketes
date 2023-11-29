@@ -73,8 +73,7 @@ public class Usuario {
         Usuario vecinoMasCercano = null;
         int distanciaMasCercana = Integer.MAX_VALUE;
         Usuario temp = null;
-        for (Usuario i: Usuarios
-             ) {
+        for (Usuario i: Usuarios) {
             if (i.nombre.equals(destino)){
                 temp = i;
             }

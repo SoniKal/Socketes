@@ -42,6 +42,10 @@ public class Main {
             {
                 System.out.println(z.getNombreUsuario() + ": " + z.getDireccionIP());
             }
+            for (int i = 0; i< usuario.getUsuarios().size(); i++)
+                if(i+1 != usuario.getUsuarios().size() && usuario.getUsuarios().get(i+1).getDireccionIP().equals(publica)  || i != 0 && usuario.getUsuarios().get(i-1).getDireccionIP().equals(publica)){
+                    usuario.getCompaneros().add(usuario.getUsuarios().get(i));
+                }
             System.out.println("----------------------------------------------------------");
             System.out.println("[FORMATO]: DESTINO");
             System.out.println("[FORMATO]: MENSAJE");
@@ -66,10 +70,10 @@ public class Main {
                         try {
                             while (true) {
                                 Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
-                                for (Usuario u: usuario.getUsuarios())
+                                for (Usuario uv6: usuario.getUsuarios())
                                 {
-                                    if (u.getDireccionIP().equals(publica)){
-                                        u.recibir(mensajeRecibido);
+                                    if (uv6.getDireccionIP().equals(publica)){
+                                        uv6.recibir(mensajeRecibido);
                                     }
                                 }
                             }
@@ -81,12 +85,12 @@ public class Main {
         }).start();
 
         while (true) {  //usuario puede enviar mensajes
-            String usuarioDest = scanner.nextLine();
-            String mensajeDest = scanner.nextLine();
+            String destinatario = scanner.nextLine().toUpperCase();
+            String textoMensaje = scanner.nextLine().toUpperCase();
 
-            Mensaje mensaje = new Mensaje(mensajeDest, usuarioDest, usuario.getNombreUsuario());
+            Mensaje mensaje = new Mensaje(textoMensaje, destinatario, usuario.getNombreUsuario());
 
-            for (Usuario uV2: usuario.getUsuarios()) {
+            for (Usuario uV2 : usuario.getUsuarios()) {
                 if (Objects.equals(uV2.getDireccionIP(), publica)) {
                     uV2.enviar(mensaje);
                 }
