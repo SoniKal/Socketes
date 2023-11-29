@@ -7,6 +7,8 @@ public class Main {
     public static void main(String[] args) {
         Usuario usuario = new Usuario();
         String publica = Usuario.interfazIP();
+        Scanner scanner = new Scanner(System.in);
+
 
         if (publica != null) {
             System.out.println("----------------------------------------------------------");
@@ -46,14 +48,14 @@ public class Main {
             return;
         }
 
-        new Thread(() -> {
+        new Thread(() -> {  //usuario puede recibir mensajes
             try {
                 ServerSocket serverSocket = new ServerSocket(12345);
-                System.out.println("Esperando a que se conecten otros usuarios...");
+                System.out.println("Esperando conexiones    .   .   .");
 
                 while (true) {
                     Socket clienteSocket = serverSocket.accept();
-                    System.out.println("¡Usuario conectado!");
+                    System.out.println("Cliente conectado.");
 
                     ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
 
@@ -61,19 +63,34 @@ public class Main {
                         try {
                             while (true) {
                                 Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
-                                for (Usuario i: usuario.getUsuarios()
-                                ) {
-                                    if (i.getDireccionIP().equals(publica)){
-                                        i.recibir(mensajeRecibido);
+                                for (Usuario u: usuario.getUsuarios())
+                                {
+                                    if (u.getDireccionIP().equals(publica)){
+                                        u.recibir(mensajeRecibido);
                                     }
                                 }
                             }
-                        } catch (IOException | ClassNotFoundException ignored) {
-                        }
+                        } catch (IOException | ClassNotFoundException ignored) {}
                     }).start();
                 }
             } catch (IOException ignored) {
             }
         }).start();
+
+        System.out.println("[FORMATO]: DESTINO");
+        System.out.println("[FORMATO]: MENSAJE");
+
+        while (true) {  //usuario puede enviar mensajes
+            String usuarioDest = scanner.nextLine();
+            String mensajeDest = scanner.nextLine();
+
+            Mensaje mensaje = new Mensaje(mensajeDest, usuarioDest, usuario.getNombreUsuario());
+
+            for (Usuario uV2: usuario.getUsuarios()) {
+                if (Objects.equals(uV2.getDireccionIP(), publica)) {
+                    uV2.enviar(mensaje);
+                }
+            }
+        }
     }
 }

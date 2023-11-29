@@ -88,7 +88,7 @@ public class Usuario {
 
     public void conectado(Mensaje mensaje) throws IOException {
         try {
-            socket = new Socket(companeroFinder(M.getDestinatario()).direccionIP, 12345);
+            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 12345);
             output = new ObjectOutputStream(socket.getOutputStream());
             System.out.println(nombreUsuario + " se ha conectado.");
         } catch (ConnectException e) {
@@ -104,7 +104,23 @@ public class Usuario {
 
     public Usuario companeroFinder(String destino){
         Usuario userReturn = new Usuario();
-        
+        int distanciaMasCercana = Integer.MAX_VALUE;
+        Usuario temp = null;
+        for (Usuario user: usuarios)
+        {
+            if (user.nombreUsuario.equals(destino)){
+                temp = user;
+            }
+        }
+        for (Usuario vecino : usuarios) {
+            if (!vecino.getNombreUsuario().equals(nombreUsuario)) {
+                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(temp));
+                if (distancia < distanciaMasCercana) {
+                    distanciaMasCercana = distancia;
+                    userReturn = vecino;
+                }
+            }
+        }
         return userReturn;
     }
 
@@ -160,14 +176,14 @@ public class Usuario {
 
     public void recibir(Mensaje mensaje) {
         if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
-            System.out.println("Mensaje de "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
+                System.out.println("[M] "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
         } else {
             Usuario vecinoUser = companeroFinder(mensaje.getUsuarioDestino());
-            if (vecinoUser != null) {
-                System.out.println(nombreUsuario + " reenviando mensaje a " + vecinoUser.getNombreUsuario());
+            if (vecinoUser != null){
+                System.out.println(nombreUsuario + " -- [R] --> " + vecinoUser.getNombreUsuario());
                 this.enviar(mensaje);
-            } else {
-                System.out.println("No se encontró un vecino para reenviar el mensaje.");
+            }else{
+                System.err.println("[USUARIO CERCANO NO ENCONTRADO]");
             }
         }
     }
