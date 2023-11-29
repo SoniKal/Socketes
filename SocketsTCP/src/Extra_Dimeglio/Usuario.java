@@ -86,9 +86,26 @@ public class Usuario {
         this.companeros = companeros;
     }
 
-    public void inicio() throws IOException {
-        socket = new Socket("172.16.255.221", 6968);
+    public void conectado(Mensaje mensaje) throws IOException {
+        try {
+            socket = new Socket(companeroFinder(M.getDestinatario()).direccionIP, 12345);
+            output = new ObjectOutputStream(socket.getOutputStream());
+            System.out.println(nombreUsuario + " se ha conectado.");
+        } catch (ConnectException e) {
+            System.out.println("Error al conectar: La conexión fue rechazada. Asegúrate de que el destinatario esté ejecutando el programa y escuchando en el puerto correcto.");
+        } catch (IOException e) {
+            System.out.println("Error al conectar: " + e.getMessage());
+        }
+    }
 
+    public void deconectado(){
+
+    }
+
+    public Usuario companeroFinder(String destino){
+        Usuario userReturn = new Usuario();
+        
+        return userReturn;
     }
 
     public void importarTXT(String rutaArchivo) {
@@ -145,9 +162,9 @@ public class Usuario {
         if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
             System.out.println("Mensaje de "+ mensaje.getUsuarioOrigen()+": " + mensaje.getMensaje());
         } else {
-            Usuario vecinoMasCercano = encontrarVecinoMasCercano(mensaje.getUsuarioDestino());
-            if (vecinoMasCercano != null) {
-                System.out.println(nombreUsuario + " reenviando mensaje a " + vecinoMasCercano.getNombre());
+            Usuario vecinoUser = companeroFinder(mensaje.getUsuarioDestino());
+            if (vecinoUser != null) {
+                System.out.println(nombreUsuario + " reenviando mensaje a " + vecinoUser.getNombreUsuario());
                 this.enviar(mensaje);
             } else {
                 System.out.println("No se encontró un vecino para reenviar el mensaje.");
@@ -156,13 +173,13 @@ public class Usuario {
     }
 
     public void enviar(Mensaje mensaje) {
-        if (!nombre.equals(mensaje.getDestinatario())) {
+        if (!nombreUsuario.equals(mensaje.getUsuarioDestino())) {
             try {
-                conectar(mensaje);
+                conectado(mensaje);
                 if (socket != null && socket.isConnected()) {
-                    outputStream.writeObject(mensaje);
-                    System.out.println(nombre + " ha enviado un mensaje a " + mensaje.getDestinatario() + ": " + mensaje.getTexto());
-                    desconectar(); // Desconectar después de enviar el mensaje
+                    output.writeObject(mensaje);
+                    System.out.println(nombreUsuario + " ha enviado un mensaje a " + mensaje.getUsuarioDestino() + ": " + mensaje.getMensaje());
+                    deconectado(); // Desconectar después de enviar el mensaje
                 } else {
                     System.out.println("No se pudo establecer la conexión. El socket no está disponible o no está conectado.");
                 }
