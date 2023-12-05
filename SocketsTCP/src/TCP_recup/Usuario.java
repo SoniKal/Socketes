@@ -110,7 +110,7 @@ public class Usuario {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
                 NetworkInterface current = interfaces.nextElement();
-                if (current.getName().equals("enp1s0") && current.isUp() && !current.isLoopback() && !current.isVirtual()) {
+                if (current.getName().equals("eno2") && current.isUp() && !current.isLoopback() && !current.isVirtual()) {
                     Enumeration<InetAddress> addresses = current.getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         InetAddress currentAddr = addresses.nextElement();
@@ -155,7 +155,7 @@ public class Usuario {
             return;
         }
 
-        Usuarios = leerUsuariosDesdeArchivo("/home/fabricio_fiesta/Labo_2023 CSTCB/tp_redes/Socketes/SocketsTCP/src/TCP_recup/Topo"); // Ruta real del archivo de usuarios
+        Usuarios = leerUsuariosDesdeArchivo("/home/dimeglio/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"); // Ruta real del archivo de usuarios
 
         int posicion = -1;
         for (int i = 0; i < Usuarios.size(); i++) {
@@ -193,7 +193,7 @@ public class Usuario {
         // Inicia un thread para la escucha continua del servidor
         new Thread(() -> {
             try {
-                ServerSocket serverSocket = new ServerSocket(12345);
+                ServerSocket serverSocket = new ServerSocket(12346);
                 System.out.println("Esperando a que se conecten otros usuarios...");
 
                 while (true) {

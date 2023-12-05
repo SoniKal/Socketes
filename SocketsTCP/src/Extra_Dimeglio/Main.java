@@ -3,7 +3,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 public class Main {
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) {
         Usuario usuario = new Usuario();
         String publica = Usuario.interfazIP();
         Scanner scanner = new Scanner(System.in);
@@ -15,7 +15,7 @@ public class Main {
             System.err.println("[ERROR OBTENCION INTERFAZ]");
             return;
         }
-        usuario.importarTXT("/home/dimeglio/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia");
+        usuario.setUsuarios(usuario.importarTXT("/home/dimeglio/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"));
         int posicion = -1;
         int index = 0;
         for (Usuario u : usuario.getUsuarios()) {
@@ -31,6 +31,9 @@ public class Main {
             System.out.println("Dir. IP: " + usuario.getUsuarios().get(posicion-1).getDireccionIP());
             System.out.println("Puerto: " + usuario.getUsuarios().get(posicion-1).getPuertoUsuario());
             System.out.println("Posicion: [" + posicion+"]");
+            usuario.setNombreUsuario(usuario.getUsuarios().get(posicion-1).getNombreUsuario());
+            usuario.setDireccionIP(usuario.getUsuarios().get(posicion-1).getDireccionIP());
+            usuario.setPuertoUsuario(usuario.getUsuarios().get(posicion-1).getPuertoUsuario());
             System.out.println("----------------------------------------------------------");
             System.out.println("Topologia: ");
             for (Usuario z : usuario.getUsuarios())
@@ -61,12 +64,7 @@ public class Main {
                         try {
                             while (true) {
                                 Mensaje mensajeRecibido = (Mensaje) inputStream.readObject();
-                                for (Usuario uv6: usuario.getUsuarios())
-                                {
-                                    if (uv6.getDireccionIP().equals(publica)){
-                                        uv6.recibir(mensajeRecibido);
-                                    }
-                                }
+                                usuario.recibir(mensajeRecibido);
                             }
                         } catch (IOException | ClassNotFoundException ignored) {}
                     }).start();
@@ -80,7 +78,7 @@ public class Main {
             Mensaje mensaje = new Mensaje(textoMensaje, destinatario, usuario.getNombreUsuario());
             for (Usuario uV2 : usuario.getUsuarios()) {
                 if (Objects.equals(uV2.getDireccionIP(), publica)) {
-                    uV2.enviar(mensaje);
+                    uV2.enviar(mensaje, usuario.getUsuarios());
                 }
             }
         }

@@ -69,15 +69,22 @@ public class Usuario {
     }
     public void conectado(Mensaje mensaje) {
         try {
-            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 24681);
-            output = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println("[C] "+nombreUsuario);
+            Usuario destino = companeroFinder(mensaje.getUsuarioDestino());
+            if (destino != null) {
+                System.out.println("Intentando conectar a: " + destino.getDireccionIP() + ": " + destino.getPuertoUsuario());
+                socket = new Socket(destino.getDireccionIP(), 12345);
+                output = new ObjectOutputStream(socket.getOutputStream());
+                System.out.println("[C] " + nombreUsuario);
+            } else {
+                System.err.println("[E] Error-Conn: Destino no encontrado");
+            }
         } catch (ConnectException e) {
             System.err.println("[E] Error-Conn: Rechazado");
         } catch (IOException e) {
             System.err.println("[E] Error-Conn: " + e.getMessage());
         }
     }
+
 
     public void desconectado() {
         try {
@@ -89,37 +96,37 @@ public class Usuario {
         }
     }
     private Usuario companeroFinder(String destino){
-        Usuario userReturn = new Usuario();
-        int distanciaMasCercana = Integer.MAX_VALUE;
-        Usuario temporal = null;
-        for (Usuario user: usuarios)
-        {
-            if (user.getNombreUsuario() == destino){
-                temporal = user;
+        Usuario userReturn = null;
+
+        int myPosicion = 0;
+        int posicionDestino = 0;
+        for (int i = 0; i<usuarios.size() ; i++){
+            if(usuarios.get(i) == this){
+                myPosicion = i;
+            } else if (usuarios.get(i).getNombreUsuario().equals(destino)){
+                posicionDestino = i;
             }
         }
-        for (Usuario vecino : companeros) {
-            if (!vecino.getNombreUsuario().equals(nombreUsuario)) {
-                int distancia = Math.abs(usuarios.indexOf(vecino) - usuarios.indexOf(temporal));
-                if (distancia < distanciaMasCercana) {
-                    distanciaMasCercana = distancia;
-                    userReturn = vecino;
-                }
-            }
+        if(myPosicion > posicionDestino){
+            userReturn = usuarios.get(myPosicion-1);
+        }else if(myPosicion < posicionDestino){
+            userReturn = usuarios.get(myPosicion+1);
         }
         return userReturn;
     }
-    public void importarTXT(String rutaArchivo) {
+    public ArrayList<Usuario> importarTXT(String rutaArchivo) {
+        ArrayList<Usuario>usuariosT = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = br.readLine()) != null) {
-                Usuario usuario = parsearLinea(linea);
-                if (usuario != null) {
-                    usuarios.add(usuario);
+                Usuario usuarioV2 = parsearLinea(linea);
+                if (usuarioV2 != null) {
+
+                    usuariosT.add(usuarioV2);
                 }
             }
             for (int i = 0; i < usuarios.size(); i++) {
-                if (usuarios.get(i).getDireccionIP().equals(this.direccionIP)) {
+                if (usuarios.get(i).getDireccionIP() == direccionIP) {
                     if (i - 1 >= 0) {
                         companeros.add(usuarios.get(i - 1));
                     }
@@ -132,15 +139,17 @@ public class Usuario {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return usuariosT;
     }
 
-    private static Usuario parsearLinea(String linea) {
+    public Usuario parsearLinea(String linea) {
         String[] partes = linea.split(":");
         if (partes.length == 3) {
             String nombre = partes[0].trim().replace("\"", "");
             String direccionIP = partes[1].trim().replace("\"", "");
             String puerto = partes[2].trim().replace("\"", "");
-            return new Usuario(nombre, direccionIP, puerto);
+            Usuario returner = new Usuario(nombre, direccionIP, puerto);
+            return returner;
         } else {
             System.err.println("[LINEA NO CUMPLE CON FORMATO:"+ linea+"]");
             return null;
@@ -173,13 +182,15 @@ public class Usuario {
             Usuario vecinoUser = companeroFinder(mensaje.getUsuarioDestino());
             if (vecinoUser != null) {
                 System.out.println(nombreUsuario + " -- [R] --> " + vecinoUser.getNombreUsuario());
-                this.enviar(mensaje);
+                this.enviar(mensaje, this.usuarios);
             } else {
                 System.err.println("[USUARIO CERCANO NO ENCONTRADO]");
             }
         }
     }
-    public void enviar(Mensaje mensaje) {
+    public void enviar(Mensaje mensaje, ArrayList<Usuario>us) {
+        this.usuarios = us;
+
         if (!nombreUsuario.equals(mensaje.getUsuarioDestino())) {
             try {
                 conectado(mensaje);
