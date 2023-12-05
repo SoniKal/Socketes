@@ -88,7 +88,7 @@ public class Usuario {
 
     public void conectado(Mensaje mensaje) {
         try {
-            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 24681);
+            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, Integer.parseInt(companeroFinder(mensaje.getUsuarioDestino()).puertoUsuario));
             output = new ObjectOutputStream(socket.getOutputStream());
             System.out.println("[C] "+nombreUsuario);
         } catch (ConnectException e) {
@@ -136,13 +136,20 @@ public class Usuario {
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = br.readLine()) != null) {
-                String[] partes = linea.split(":");
-                if (partes.length == 3) {
-                    String nombre = partes[0].trim().replace("\"", "");
-                    String direccionIP = partes[1].trim().replace("\"", "");
-                    String puerto = partes[2].trim().replace("\"", "");
-
-                    companeros.add(new Usuario(nombre, direccionIP, puerto));
+                Usuario usuario = parsearLinea(linea);
+                if (usuario != null) {
+                    usuarios.add(usuario);
+                }
+            }
+            for (int i = 0; i < usuarios.size(); i++) {
+                if (usuarios.get(i).getDireccionIP().equals(this.direccionIP)) {
+                    if (i - 1 >= 0) {
+                        companeros.add(usuarios.get(i - 1));
+                    }
+                    if (i + 1 < usuarios.size()) {
+                        companeros.add(usuarios.get(i + 1));
+                    }
+                    break;
                 }
             }
 
