@@ -2,13 +2,11 @@ package Extra_Dimeglio;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
 public class Main {
     public static void main(String[] args) {
         Usuario usuario = new Usuario();
         String publica = Usuario.interfazIP();
         Scanner scanner = new Scanner(System.in);
-
 
         if (publica != null) {
             System.out.println("----------------------------------------------------------");
@@ -17,9 +15,7 @@ public class Main {
             System.err.println("[ERROR OBTENCION INTERFAZ]");
             return;
         }
-
         usuario.importarTXT("/home/jorge/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia");
-
         int posicion = -1;
         int index = 0;
         for (Usuario u : usuario.getUsuarios()) {
@@ -29,7 +25,6 @@ public class Main {
             }
             index++;
         }
-
         if (posicion != -1) {
             System.out.println("----------------------------------------------------------");
             System.out.println("Usuario: " + usuario.getUsuarios().get(posicion-1).getNombreUsuario());
@@ -43,7 +38,7 @@ public class Main {
                 System.out.println(z.getNombreUsuario() + ": " + z.getDireccionIP());
             }
             for (int i = 0; i< usuario.getUsuarios().size(); i++)
-                if(i+1 != usuario.getUsuarios().size() && usuario.getUsuarios().get(i+1).getDireccionIP().equals(publica)  || i != 0 && usuario.getUsuarios().get(i-1).getDireccionIP().equals(publica)){
+                if(i+1 != usuario.getUsuarios().size() && usuario.getUsuarios().get(i+1).getDireccionIP().equals(publica) || i != 0 && usuario.getUsuarios().get(i-1).getDireccionIP().equals(publica)){
                     usuario.getCompaneros().add(usuario.getUsuarios().get(i));
                 }
             System.out.println("----------------------------------------------------------");
@@ -54,18 +49,14 @@ public class Main {
             System.err.println("[POSICION NO ENCONTRADA]");
             return;
         }
-
-        new Thread(() -> {  //usuario puede recibir mensajes
+        new Thread(() -> { //usuario puede recibir mensajes
             try {
                 ServerSocket serverSocket = new ServerSocket(12345);
-                System.out.println("Esperando conexiones    .   .   .");
-
+                System.out.println("Esperando conexiones . . .");
                 while (true) {
                     Socket clienteSocket = serverSocket.accept();
                     System.out.println("Cliente conectado.");
-
                     ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
-
                     new Thread(() -> {
                         try {
                             while (true) {
@@ -83,13 +74,10 @@ public class Main {
             } catch (IOException ignored) {
             }
         }).start();
-
-        while (true) {  //usuario puede enviar mensajes
+        while (true) { //usuario puede enviar mensajes
             String destinatario = scanner.nextLine().toUpperCase();
             String textoMensaje = scanner.nextLine().toUpperCase();
-
             Mensaje mensaje = new Mensaje(textoMensaje, destinatario, usuario.getNombreUsuario());
-
             for (Usuario uV2 : usuario.getUsuarios()) {
                 if (Objects.equals(uV2.getDireccionIP(), publica)) {
                     uV2.enviar(mensaje);

@@ -1,8 +1,8 @@
 package Extra_Dimeglio;
 import java.io.*;
 import java.net.*;
+import java.sql.SQLOutput;
 import java.util.*;
-
 public class Usuario {
     private String nombreUsuario;
     private String puertoUsuario;
@@ -12,83 +12,64 @@ public class Usuario {
     private ObjectInputStream input;
     private ArrayList<Usuario>usuarios = new ArrayList<>();
     private ArrayList<Usuario>companeros = new ArrayList<>();
-
     public Usuario(String n, String ip, String p) {
         nombreUsuario = n;
         direccionIP = ip;
         puertoUsuario = p;
     }
-
     public Usuario() {
     }
-
     public String getNombreUsuario() {
         return nombreUsuario;
     }
-
     public void setNombreUsuario(String nombreUsuario) {
         this.nombreUsuario = nombreUsuario;
     }
-
     public String getPuertoUsuario() {
         return puertoUsuario;
     }
-
     public void setPuertoUsuario(String puertoUsuario) {
         this.puertoUsuario = puertoUsuario;
     }
-
     public String getDireccionIP() {
         return direccionIP;
     }
-
     public void setDireccionIP(String direccionIP) {
         this.direccionIP = direccionIP;
     }
-
     public Socket getSocket() {
         return socket;
     }
-
     public void setSocket(Socket socket) {
         this.socket = socket;
     }
-
     public ObjectOutputStream getOutput() {
         return output;
     }
-
     public void setOutput(ObjectOutputStream output) {
         this.output = output;
     }
-
     public ObjectInputStream getInput() {
         return input;
     }
-
     public void setInput(ObjectInputStream input) {
         this.input = input;
     }
-
     public ArrayList<Usuario> getUsuarios() {
         return usuarios;
     }
-
     public void setUsuarios(ArrayList<Usuario> usuarios) {
         this.usuarios = usuarios;
     }
-
     public ArrayList<Usuario> getCompaneros() {
         return companeros;
     }
-
     public void setCompaneros(ArrayList<Usuario> companeros) {
         this.companeros = companeros;
     }
-
     public void conectado(Mensaje mensaje) {
         try {
-            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, Integer.parseInt(companeroFinder(mensaje.getUsuarioDestino()).puertoUsuario));
+            socket = new Socket(companeroFinder(mensaje.getUsuarioDestino()).direccionIP, 24681);
             output = new ObjectOutputStream(socket.getOutputStream());
             System.out.println("[C] "+nombreUsuario);
         } catch (ConnectException e) {
@@ -97,8 +78,6 @@ public class Usuario {
             System.err.println("[E] Error-Conn: " + e.getMessage());
         }
     }
-
-
 
     public void desconectado() {
         try {
@@ -109,14 +88,13 @@ public class Usuario {
         } catch (IOException ignored) {
         }
     }
-
     private Usuario companeroFinder(String destino){
-        Usuario userReturn = null;
+        Usuario userReturn = new Usuario();
         int distanciaMasCercana = Integer.MAX_VALUE;
         Usuario temporal = null;
         for (Usuario user: usuarios)
         {
-            if (user.getNombreUsuario().equals(destino)){
+            if (user.getNombreUsuario() == destino){
                 temporal = user;
             }
         }
@@ -131,7 +109,6 @@ public class Usuario {
         }
         return userReturn;
     }
-
     public void importarTXT(String rutaArchivo) {
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
@@ -152,16 +129,13 @@ public class Usuario {
                     break;
                 }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
     private static Usuario parsearLinea(String linea) {
         String[] partes = linea.split(":");
-
         if (partes.length == 3) {
             String nombre = partes[0].trim().replace("\"", "");
             String direccionIP = partes[1].trim().replace("\"", "");
@@ -172,9 +146,7 @@ public class Usuario {
             return null;
         }
     }
-
     public static String interfazIP() {
-
         try {
             Enumeration<NetworkInterface> interfaz = NetworkInterface.getNetworkInterfaces();
             while (interfaz.hasMoreElements()) {
@@ -194,7 +166,6 @@ public class Usuario {
             return null;
         }
     }
-
     public void recibir(Mensaje mensaje) {
         if (nombreUsuario.equals(mensaje.getUsuarioDestino())) {
             System.out.println("[M] " + mensaje.getUsuarioOrigen() + ": " + mensaje.getMensaje());
@@ -208,7 +179,6 @@ public class Usuario {
             }
         }
     }
-
     public void enviar(Mensaje mensaje) {
         if (!nombreUsuario.equals(mensaje.getUsuarioDestino())) {
             try {
@@ -227,5 +197,4 @@ public class Usuario {
             System.err.println("[E] Error??: No te envies mensajes");
         }
     }
-
 }
