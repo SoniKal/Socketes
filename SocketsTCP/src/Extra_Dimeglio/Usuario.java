@@ -146,12 +146,12 @@ public class Usuario {
             return null;
         }
     }
-    public static String interfazIP() {
+    public static String interfazIP() { //en las compus de arriba es 'enp1s0' || en las de abajo 'eno2'
         try {
             Enumeration<NetworkInterface> interfaz = NetworkInterface.getNetworkInterfaces();
             while (interfaz.hasMoreElements()) {
                 NetworkInterface actual = interfaz.nextElement();
-                if (actual.getName().equals("enp1s0") && actual.isUp() && !actual.isLoopback() && !actual.isVirtual()) {
+                if (actual.getName().equals("eno2") && actual.isUp() && !actual.isLoopback() && !actual.isVirtual()) {
                     Enumeration<InetAddress> addresses = actual.getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         InetAddress currentAddr = addresses.nextElement();

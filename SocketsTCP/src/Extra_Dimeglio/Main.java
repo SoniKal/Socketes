@@ -3,7 +3,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         Usuario usuario = new Usuario();
         String publica = Usuario.interfazIP();
         Scanner scanner = new Scanner(System.in);
@@ -15,7 +15,7 @@ public class Main {
             System.err.println("[ERROR OBTENCION INTERFAZ]");
             return;
         }
-        usuario.importarTXT("/home/jorge/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia");
+        usuario.importarTXT("/home/dimeglio/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia");
         int posicion = -1;
         int index = 0;
         for (Usuario u : usuario.getUsuarios()) {
