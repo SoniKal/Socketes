@@ -196,7 +196,7 @@ public class Usuario {
                 conectado(mensaje);
                 if (socket != null && socket.isConnected()) {
                     output.writeObject(mensaje);
-                    System.out.println(nombreUsuario + " -- [E] --> " + mensaje.getUsuarioDestino());
+                    System.out.println(nombreUsuario + " -- [R] --> " + mensaje.getUsuarioDestino());
                     desconectado();
                 } else {
                     System.err.println("[E] Error-Socket: No disponible");
