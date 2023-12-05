@@ -76,6 +76,8 @@ public class Main {
             String destinatario = scanner.nextLine().toUpperCase();
             String textoMensaje = scanner.nextLine().toUpperCase();
             Mensaje mensaje = new Mensaje(textoMensaje, destinatario, usuario.getNombreUsuario());
+            mensaje.setUsuarioOrigen(usuario.getNombreUsuario());
+
             for (Usuario uV2 : usuario.getUsuarios()) {
                 if (Objects.equals(uV2.getDireccionIP(), publica)) {
                     uV2.enviar(mensaje, usuario.getUsuarios());
