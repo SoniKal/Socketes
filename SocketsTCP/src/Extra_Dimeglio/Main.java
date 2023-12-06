@@ -15,7 +15,7 @@ public class Main {
             System.err.println("[ERROR OBTENCION INTERFAZ]");
             return;
         }
-        usuario.setUsuarios(usuario.importarTXT("/home/dimeglio/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"));
+        usuario.setUsuarios(usuario.importarTXT("/home/alumno/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"));
         int posicion = -1;
         int index = 0;
         for (Usuario u : usuario.getUsuarios()) {
@@ -54,11 +54,10 @@ public class Main {
         }
         new Thread(() -> { //usuario puede recibir mensajes
             try {
-                ServerSocket serverSocket = new ServerSocket(12345);
+                ServerSocket serverSocket = new ServerSocket(35400);
                 System.out.println("Esperando conexiones . . .");
                 while (true) {
                     Socket clienteSocket = serverSocket.accept();
-                    System.out.println("Cliente conectado.");
                     ObjectInputStream inputStream = new ObjectInputStream(clienteSocket.getInputStream());
                     new Thread(() -> {
                         try {
