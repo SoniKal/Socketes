@@ -11,7 +11,6 @@ public class Usuario {
     private ObjectOutputStream output;
     private ObjectInputStream input;
     private ArrayList<Usuario>usuarios = new ArrayList<>();
-    private ArrayList<Usuario>companeros = new ArrayList<>();
     public Usuario(String n, String ip, String p) {
         nombreUsuario = n;
         direccionIP = ip;
@@ -61,12 +60,7 @@ public class Usuario {
     public void setUsuarios(ArrayList<Usuario> usuarios) {
         this.usuarios = usuarios;
     }
-    public ArrayList<Usuario> getCompaneros() {
-        return companeros;
-    }
-    public void setCompaneros(ArrayList<Usuario> companeros) {
-        this.companeros = companeros;
-    }
+
     public void conectado(Mensaje mensaje) {
         try {
             Usuario destino = companeroFinder(mensaje.getUsuarioDestino());
@@ -123,17 +117,6 @@ public class Usuario {
                 if (usuarioV2 != null) {
 
                     usuariosT.add(usuarioV2);
-                }
-            }
-            for (int i = 0; i < usuarios.size(); i++) {
-                if (usuarios.get(i).getDireccionIP() == direccionIP) {
-                    if (i - 1 >= 0) {
-                        companeros.add(usuarios.get(i - 1));
-                    }
-                    if (i + 1 < usuarios.size()) {
-                        companeros.add(usuarios.get(i + 1));
-                    }
-                    break;
                 }
             }
         } catch (IOException e) {

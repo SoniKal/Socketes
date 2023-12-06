@@ -15,7 +15,7 @@ public class Main {
             System.err.println("[ERROR OBTENCION INTERFAZ]");
             return;
         }
-        usuario.setUsuarios(usuario.importarTXT("/home/alumno/Escritorio/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"));
+        usuario.setUsuarios(usuario.importarTXT("/home/alumno/Imágenes/Socketes/SocketsTCP/src/Extra_Dimeglio/topologia"));
         int posicion = -1;
         int index = 0;
         for (Usuario u : usuario.getUsuarios()) {
@@ -25,7 +25,7 @@ public class Main {
             }
             index++;
         }
-        if (posicion != -1) {
+        if (posicion != -1) { //muestra toda la info. de las conexiones
             System.out.println("----------------------------------------------------------");
             System.out.println("Usuario: " + usuario.getUsuarios().get(posicion-1).getNombreUsuario());
             System.out.println("Dir. IP: " + usuario.getUsuarios().get(posicion-1).getDireccionIP());
@@ -40,10 +40,6 @@ public class Main {
             {
                 System.out.println(z.getNombreUsuario() + ": " + z.getDireccionIP());
             }
-            for (int i = 0; i< usuario.getUsuarios().size(); i++)
-                if(i+1 != usuario.getUsuarios().size() && usuario.getUsuarios().get(i+1).getDireccionIP().equals(publica) || i != 0 && usuario.getUsuarios().get(i-1).getDireccionIP().equals(publica)){
-                    usuario.getCompaneros().add(usuario.getUsuarios().get(i));
-                }
             System.out.println("----------------------------------------------------------");
             System.out.println("[FORMATO]: DESTINO");
             System.out.println("[FORMATO]: MENSAJE");
@@ -54,7 +50,7 @@ public class Main {
         }
         new Thread(() -> { //usuario puede recibir mensajes
             try {
-                ServerSocket serverSocket = new ServerSocket(35400);
+                ServerSocket serverSocket = new ServerSocket(32000);
                 System.out.println("Esperando conexiones . . .");
                 while (true) {
                     Socket clienteSocket = serverSocket.accept();
